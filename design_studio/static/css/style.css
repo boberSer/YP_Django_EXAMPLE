@@ -1,0 +1,18 @@
+/* Минималистичные стили для легковесного интерфейса Design.pro */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #212529;
+}
+
+.table th {
+    font-weight: 600;
+}
+
+.object-fit-cover {
+    object-fit: cover;
+}
+
+.invalid-feedback {
+    display: block;
+    font-size: 0.8rem;
+}

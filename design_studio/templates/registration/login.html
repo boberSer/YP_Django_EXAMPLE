@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Вход — Design.pro{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow rounded-4 p-4 p-md-5 bg-white">
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-3">
+                        <i class="bi bi-box-arrow-in-right fs-2"></i>
+                    </div>
+                    <h2 class="fw-bold">Авторизация</h2>
+                    <p class="text-muted small">Введите логин и пароль для входа в систему</p>
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 small mb-3">
+                            {% for error in form.non_field_errors %}
+                                <div><i class="bi bi-exclamation-triangle-fill me-1"></i> {{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">
+                            Логин <span class="text-danger">*</span>
+                        </label>
+                        <input type="text"
+                               name="{{ form.username.html_name }}"
+                               id="{{ form.username.id_for_label }}"
+                               value="{{ form.username.value|default:'' }}"
+                               class="form-control {% if form.username.errors or form.non_field_errors %}is-invalid{% endif %}"
+                               placeholder="Введите логин"
+                               required autofocus>
+                        {% if form.username.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.username.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">
+                            Пароль <span class="text-danger">*</span>
+                        </label>
+                        <input type="password"
+                               name="{{ form.password.html_name }}"
+                               id="{{ form.password.id_for_label }}"
+                               class="form-control {% if form.password.errors or form.non_field_errors %}is-invalid{% endif %}"
+                               placeholder="Введите пароль"
+                               required>
+                        {% if form.password.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.password.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Войти
+                    </button>
+                </form>
+
+                <div class="alert alert-info py-2 px-3 small mt-4 mb-0 bg-light border">
+                    <i class="bi bi-info-circle-fill text-primary me-1"></i>
+                    <strong>Данные администратора:</strong> логин <code>admin</code>, пароль <code>admin</code>
+                </div>
+
+                <hr class="my-4 text-secondary opacity-25">
+
+                <div class="text-center small">
+                    Еще нет аккаунта? <a href="{% url 'register' %}" class="fw-semibold text-decoration-none">Зарегистрироваться</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
