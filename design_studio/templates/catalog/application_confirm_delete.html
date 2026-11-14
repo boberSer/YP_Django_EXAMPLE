@@ -3,38 +3,31 @@
 {% block title %}Удаление заявки — Design.pro{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card border-0 shadow rounded-4 p-4 p-md-5 bg-white text-center">
-                <div class="d-inline-flex p-3 rounded-circle bg-danger bg-opacity-10 text-danger mb-3 mx-auto">
-                    <i class="bi bi-trash3-fill fs-1"></i>
-                </div>
-                <h3 class="fw-bold mb-2">Удаление заявки</h3>
-                <p class="text-secondary mb-4">
-                    Вы действительно уверены, что хотите удалить заявку:
-                    <br>
-                    <strong class="text-dark fs-5">«{{ application.title }}»</strong>?
-                </p>
-
-                <div class="alert alert-warning text-start small mb-4">
-                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                    Внимание: Данное действие необратимо. Удаление доступно только для заявок со статусом <strong>«Новая»</strong>.
-                </div>
-
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="d-flex justify-content-center gap-3">
-                        <a href="{% url 'cabinet' %}" class="btn btn-outline-secondary px-4">
-                            Отмена
-                        </a>
-                        <button type="submit" class="btn btn-danger px-4 fw-semibold">
-                            <i class="bi bi-trash3-fill me-1"></i> Да, удалить
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+<div class="form-box confirm-box">
+    <div class="confirm-icon">
+        &times;
     </div>
+    <h2 class="form-title">Удаление заявки</h2>
+    <p class="dialog-message">
+        Вы действительно хотите безвозвратно удалить заявку:
+        <br>
+        <strong>«{{ application.title }}»</strong>?
+    </p>
+
+    <div class="alert alert-warning">
+        Внимание: данное действие необратимо. Удаление доступно только для заявок со статусом <strong>«Новая»</strong>.
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="confirm-actions">
+            <a href="{% url 'cabinet' %}" class="btn">
+                Отмена
+            </a>
+            <button type="submit" class="btn btn-danger">
+                Да, удалить
+            </button>
+        </div>
+    </form>
 </div>
 {% endblock %}

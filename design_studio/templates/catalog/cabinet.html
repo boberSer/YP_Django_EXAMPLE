@@ -3,31 +3,34 @@
 {% block title %}Личный кабинет — Design.pro{% endblock %}
 
 {% block content %}
-<div class="container">
-
-    <!-- Заголовок и кнопка -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="box">
+    <!-- Верхний блок: заголовок и действие -->
+    <div class="box-header">
         <div>
-            <h2 class="h3 fw-bold mb-0">Мои заявки на дизайн</h2>
-            <div class="text-muted small">Пользователь: {{ user.fio|default:user.username }}</div>
+            <h2 class="box-title">Мои заявки на дизайн</h2>
+            <div class="box-subtitle">
+                Пользователь: <b>{{ user.fio|default:user.username }}</b>
+            </div>
         </div>
-        <a href="{% url 'application-create' %}" class="btn btn-primary btn-sm">+ Новая заявка</a>
+        <div>
+            <a href="{% url 'application-create' %}" class="btn btn-primary btn-sm">+ Новая заявка</a>
+        </div>
     </div>
 
     <!-- Фильтрация по статусу -->
-    <div class="mb-3 d-flex align-items-center gap-2">
-        <span class="small text-muted">Фильтр:</span>
-        <div class="btn-group btn-group-sm" role="group">
-            <a href="{% url 'cabinet' %}?status=all" class="btn {% if current_filter == 'all' or not current_filter %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+    <div class="filter-bar">
+        <span class="filter-label">Фильтр:</span>
+        <div class="filter-group">
+            <a href="{% url 'cabinet' %}?status=all" class="filter-btn {% if current_filter == 'all' or not current_filter %}active{% endif %}">
                 Все ({{ total_count }})
             </a>
-            <a href="{% url 'cabinet' %}?status=new" class="btn {% if current_filter == 'new' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+            <a href="{% url 'cabinet' %}?status=new" class="filter-btn {% if current_filter == 'new' %}active{% endif %}">
                 Новые ({{ new_count }})
             </a>
-            <a href="{% url 'cabinet' %}?status=in_progress" class="btn {% if current_filter == 'in_progress' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+            <a href="{% url 'cabinet' %}?status=in_progress" class="filter-btn {% if current_filter == 'in_progress' %}active{% endif %}">
                 В работе ({{ in_progress_count }})
             </a>
-            <a href="{% url 'cabinet' %}?status=completed" class="btn {% if current_filter == 'completed' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+            <a href="{% url 'cabinet' %}?status=completed" class="filter-btn {% if current_filter == 'completed' %}active{% endif %}">
                 Выполненные ({{ completed_count }})
             </a>
         </div>
@@ -35,64 +38,72 @@
 
     <!-- Таблица заявок -->
     {% if applications %}
-        <div class="table-responsive border rounded bg-white">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light small">
+        <div class="table-wrap">
+            <table>
+                <thead>
                     <tr>
-                        <th>Дата</th>
-                        <th>Название</th>
-                        <th>Категория</th>
-                        <th>План</th>
-                        <th>Статус</th>
+                        <th class="col-date">Дата</th>
+                        <th>Название и описание</th>
+                        <th class="col-category">Категория</th>
+                        <th class="col-thumb">План</th>
+                        <th class="col-status">Статус</th>
                         <th>Ответ студии</th>
-                        <th class="text-end">Действие</th>
+                        <th class="col-action">Действие</th>
                     </tr>
                 </thead>
-                <tbody class="small">
+                <tbody>
                     {% for app in applications %}
                         <tr>
                             <!-- Временная метка по ТЗ -->
-                            <td class="text-nowrap text-muted">{{ app.created_at|date:"d.m.Y H:i" }}</td>
+                            <td class="col-date-text">
+                                {{ app.created_at|date:"d.m.Y H:i" }}
+                            </td>
 
                             <!-- Название и описание по ТЗ -->
                             <td>
-                                <div class="fw-bold">{{ app.title }}</div>
-                                <div class="text-muted" style="max-width: 250px; font-size: 0.85rem;">{{ app.description }}</div>
+                                <div class="app-title">{{ app.title }}</div>
+                                <div class="app-desc">{{ app.description }}</div>
                             </td>
 
                             <!-- Категория заявки по ТЗ -->
-                            <td><span class="badge bg-light text-dark border">{{ app.category.name }}</span></td>
+                            <td>
+                                <span class="badge badge-category">{{ app.category.name }}</span>
+                            </td>
 
                             <!-- Фото помещения -->
                             <td>
                                 {% if app.photo %}
                                     <a href="{{ app.photo.url }}" target="_blank">
-                                        <img src="{{ app.photo.url }}" alt="План" class="rounded border" style="width: 45px; height: 45px; object-fit: cover;">
+                                        <img src="{{ app.photo.url }}" alt="План" class="app-thumb">
                                     </a>
+                                {% else %}
+                                    <span class="text-muted">—</span>
                                 {% endif %}
                             </td>
 
                             <!-- Статус заявки по ТЗ -->
                             <td>
                                 {% if app.status == 'new' %}
-                                    <span class="badge bg-warning text-dark">Новая</span>
+                                    <span class="badge badge-new">Новая</span>
                                 {% elif app.status == 'in_progress' %}
-                                    <span class="badge bg-info text-dark">Принято в работу</span>
+                                    <span class="badge badge-progress">Принято в работу</span>
                                 {% elif app.status == 'completed' %}
-                                    <span class="badge bg-success">Выполнено</span>
+                                    <span class="badge badge-completed">Выполнено</span>
                                 {% endif %}
                             </td>
 
                             <!-- Ответ студии (комментарий или дизайн) -->
                             <td>
                                 {% if app.status == 'in_progress' and app.comment %}
-                                    <span class="text-info-emphasis"><strong>Комментарий:</strong> {{ app.comment }}</span>
+                                    <div class="comment-text"><strong>Комментарий:</strong> {{ app.comment }}</div>
                                 {% elif app.status == 'completed' %}
-                                    <div class="d-flex align-items-center gap-1">
+                                    <div class="completed-reply">
                                         {% if app.design_image %}
-                                            <a href="{{ app.design_image.url }}" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2">Дизайн</a>
+                                            <a href="{{ app.design_image.url }}" target="_blank" class="btn btn-sm btn-success">Дизайн</a>
                                         {% endif %}
-                                        {% if app.comment %}<small class="text-muted">{{ app.comment }}</small>{% endif %}
+                                        {% if app.comment %}
+                                            <span class="comment-note">{{ app.comment }}</span>
+                                        {% endif %}
                                     </div>
                                 {% else %}
                                     <span class="text-muted">—</span>
@@ -100,35 +111,33 @@
                             </td>
 
                             <!-- Кнопка удаления (только если статус Новая) -->
-                            <td class="text-end">
+                            <td class="col-action-cell">
                                 {% if app.is_deletable %}
-                                    <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" data-bs-toggle="modal" data-bs-target="#delModal{{ app.pk }}">
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('delModal{{ app.pk }}').showModal()">
                                         Удалить
                                     </button>
 
-                                    <!-- Простое окно подтверждения удаления -->
-                                    <div class="modal fade text-start" id="delModal{{ app.pk }}" tabindex="-1">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <div class="modal-header py-2">
-                                                    <h6 class="modal-title fw-bold">Подтверждение удаления</h6>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    Вы действительно хотите удалить заявку <strong>«{{ app.title }}»</strong>?
-                                                </div>
-                                                <div class="modal-footer py-2">
-                                                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Отмена</button>
-                                                    <form method="post" action="{% url 'application-delete' app.pk %}">
-                                                        {% csrf_token %}
-                                                        <button type="submit" class="btn btn-sm btn-danger">Да, удалить</button>
-                                                    </form>
-                                                </div>
-                                            </div>
+                                    <!-- Нативный диалог подтверждения удаления -->
+                                    <dialog id="delModal{{ app.pk }}">
+                                        <div class="dialog-title text-danger">Подтверждение удаления</div>
+                                        <p class="dialog-message">
+                                            Вы действительно хотите удалить заявку:
+                                            <br>
+                                            <strong>«{{ app.title }}»</strong>?
+                                        </p>
+                                        <div class="alert alert-warning">
+                                            Внимание: данное действие необратимо. Удаление доступно только для заявок со статусом «Новая».
                                         </div>
-                                    </div>
+                                        <div class="dialog-actions">
+                                            <button type="button" class="btn btn-sm" onclick="this.closest('dialog').close()">Отмена</button>
+                                            <form method="post" action="{% url 'application-delete' app.pk %}" class="inline-form">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger btn-sm">Да, удалить</button>
+                                            </form>
+                                        </div>
+                                    </dialog>
                                 {% else %}
-                                    <span class="text-muted small" title="Удалить можно только заявку со статусом «Новая»">Недоступно</span>
+                                    <span class="text-muted small">Недоступно</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -137,9 +146,9 @@
             </table>
         </div>
     {% else %}
-        <div class="p-4 text-center border rounded bg-light">
-            <p class="text-muted mb-2">Заявок с выбранным фильтром не найдено.</p>
-            <a href="{% url 'application-create' %}" class="btn btn-sm btn-primary">Создать первую заявку</a>
+        <div class="empty-state">
+            <p class="empty-state-text">Заявок с выбранным фильтром не найдено.</p>
+            <a href="{% url 'application-create' %}" class="btn btn-sm btn-primary">+ Создать первую заявку</a>
         </div>
     {% endif %}
 

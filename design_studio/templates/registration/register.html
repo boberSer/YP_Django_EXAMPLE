@@ -3,154 +3,145 @@
 {% block title %}Регистрация — Design.pro{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card border-0 shadow rounded-4 p-4 p-md-5 bg-white">
-                <div class="text-center mb-4">
-                    <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-3">
-                        <i class="bi bi-person-plus-fill fs-2"></i>
-                    </div>
-                    <h2 class="fw-bold">Регистрация в Design.pro</h2>
-                    <p class="text-muted small">Заполните поля для создания учетной записи</p>
-                </div>
+<div class="form-box">
+    <div class="form-header">
+        <h2 class="form-title">Регистрация в Design.pro</h2>
+        <div class="field-help">Заполните поля для создания учетной записи пользователя</div>
+    </div>
 
-                <form method="post" novalidate>
-                    {% csrf_token %}
+    <form method="post" novalidate>
+        {% csrf_token %}
 
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger py-2 small">
-                            {% for error in form.non_field_errors %}
-                                <div><i class="bi bi-exclamation-circle me-1"></i> {{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-
-                    <!-- ФИО -->
-                    <div class="mb-3">
-                        <label for="{{ form.fio.id_for_label }}" class="form-label fw-semibold">
-                            {{ form.fio.label }} <span class="text-danger">*</span>
-                        </label>
-                        <input type="text"
-                               name="{{ form.fio.html_name }}"
-                               id="{{ form.fio.id_for_label }}"
-                               value="{{ form.fio.value|default:'' }}"
-                               class="form-control {% if form.fio.errors %}is-invalid{% endif %}"
-                               placeholder="Иванов Иван Иванович"
-                               required>
-                        <div class="form-text small">Только кириллические буквы, дефис и пробелы</div>
-                        {% if form.fio.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.fio.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Логин -->
-                    <div class="mb-3">
-                        <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">
-                            {{ form.username.label }} <span class="text-danger">*</span>
-                        </label>
-                        <input type="text"
-                               name="{{ form.username.html_name }}"
-                               id="{{ form.username.id_for_label }}"
-                               value="{{ form.username.value|default:'' }}"
-                               class="form-control {% if form.username.errors %}is-invalid{% endif %}"
-                               placeholder="ivanov-ivan"
-                               required>
-                        <div class="form-text small">Только латинские буквы и дефис, уникальный</div>
-                        {% if form.username.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.username.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Email -->
-                    <div class="mb-3">
-                        <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
-                            {{ form.email.label }} <span class="text-danger">*</span>
-                        </label>
-                        <input type="email"
-                               name="{{ form.email.html_name }}"
-                               id="{{ form.email.id_for_label }}"
-                               value="{{ form.email.value|default:'' }}"
-                               class="form-control {% if form.email.errors %}is-invalid{% endif %}"
-                               placeholder="ivanov@example.com"
-                               required>
-                        {% if form.email.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.email.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Пароль -->
-                    <div class="mb-3">
-                        <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">
-                            {{ form.password.label }} <span class="text-danger">*</span>
-                        </label>
-                        <input type="password"
-                               name="{{ form.password.html_name }}"
-                               id="{{ form.password.id_for_label }}"
-                               class="form-control {% if form.password.errors %}is-invalid{% endif %}"
-                               placeholder="Введите надежный пароль"
-                               required>
-                        {% if form.password.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.password.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Повтор пароля -->
-                    <div class="mb-3">
-                        <label for="{{ form.password_confirm.id_for_label }}" class="form-label fw-semibold">
-                            {{ form.password_confirm.label }} <span class="text-danger">*</span>
-                        </label>
-                        <input type="password"
-                               name="{{ form.password_confirm.html_name }}"
-                               id="{{ form.password_confirm.id_for_label }}"
-                               class="form-control {% if form.password_confirm.errors %}is-invalid{% endif %}"
-                               placeholder="Повторите пароль"
-                               required>
-                        {% if form.password_confirm.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.password_confirm.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Согласие на обработку ПДн -->
-                    <div class="mb-4 form-check">
-                        <input type="checkbox"
-                               name="{{ form.agree_data_processing.html_name }}"
-                               id="{{ form.agree_data_processing.id_for_label }}"
-                               class="form-check-input {% if form.agree_data_processing.errors %}is-invalid{% endif %}"
-                               {% if form.agree_data_processing.value %}checked{% endif %}
-                               required>
-                        <label class="form-check-label small" for="{{ form.agree_data_processing.id_for_label }}">
-                            Я даю согласие на обработку персональных данных <span class="text-danger">*</span>
-                        </label>
-                        {% if form.agree_data_processing.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.agree_data_processing.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">
-                        <i class="bi bi-check2-circle me-1"></i> Зарегистрироваться
-                    </button>
-                </form>
-
-                <hr class="my-4 text-secondary opacity-25">
-
-                <div class="text-center small">
-                    Уже зарегистрированы? <a href="{% url 'login' %}" class="fw-semibold text-decoration-none">Войти в аккаунт</a>
-                </div>
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
             </div>
+        {% endif %}
+
+        <!-- ФИО -->
+        <div class="form-group">
+            <label for="{{ form.fio.id_for_label }}">
+                {{ form.fio.label }} <span class="text-danger">*</span>
+            </label>
+            <input type="text"
+                   name="{{ form.fio.html_name }}"
+                   id="{{ form.fio.id_for_label }}"
+                   value="{{ form.fio.value|default:'' }}"
+                   class="{% if form.fio.errors %}is-invalid{% endif %}"
+                   placeholder="Иванов Иван Иванович"
+                   required>
+            <div class="field-help">Только кириллические буквы, дефис и пробелы</div>
+            {% if form.fio.errors %}
+                <div class="field-error">
+                    {% for error in form.fio.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
         </div>
+
+        <!-- Логин -->
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}">
+                {{ form.username.label }} <span class="text-danger">*</span>
+            </label>
+            <input type="text"
+                   name="{{ form.username.html_name }}"
+                   id="{{ form.username.id_for_label }}"
+                   value="{{ form.username.value|default:'' }}"
+                   class="{% if form.username.errors %}is-invalid{% endif %}"
+                   placeholder="ivanov-ivan"
+                   required>
+            <div class="field-help">Только латинские буквы и дефис, уникальный</div>
+            {% if form.username.errors %}
+                <div class="field-error">
+                    {% for error in form.username.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+            <label for="{{ form.email.id_for_label }}">
+                {{ form.email.label }} <span class="text-danger">*</span>
+            </label>
+            <input type="email"
+                   name="{{ form.email.html_name }}"
+                   id="{{ form.email.id_for_label }}"
+                   value="{{ form.email.value|default:'' }}"
+                   class="{% if form.email.errors %}is-invalid{% endif %}"
+                   placeholder="ivanov@example.com"
+                   required>
+            {% if form.email.errors %}
+                <div class="field-error">
+                    {% for error in form.email.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Пароль -->
+        <div class="form-group">
+            <label for="{{ form.password.id_for_label }}">
+                {{ form.password.label }} <span class="text-danger">*</span>
+            </label>
+            <input type="password"
+                   name="{{ form.password.html_name }}"
+                   id="{{ form.password.id_for_label }}"
+                   class="{% if form.password.errors %}is-invalid{% endif %}"
+                   placeholder="Введите пароль"
+                   required>
+            {% if form.password.errors %}
+                <div class="field-error">
+                    {% for error in form.password.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Повтор пароля -->
+        <div class="form-group">
+            <label for="{{ form.password_confirm.id_for_label }}">
+                {{ form.password_confirm.label }} <span class="text-danger">*</span>
+            </label>
+            <input type="password"
+                   name="{{ form.password_confirm.html_name }}"
+                   id="{{ form.password_confirm.id_for_label }}"
+                   class="{% if form.password_confirm.errors %}is-invalid{% endif %}"
+                   placeholder="Повторите пароль"
+                   required>
+            {% if form.password_confirm.errors %}
+                <div class="field-error">
+                    {% for error in form.password_confirm.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Согласие на обработку ПДн -->
+        <div class="checkbox-group">
+            <input type="checkbox"
+                   name="{{ form.agree_data_processing.html_name }}"
+                   id="{{ form.agree_data_processing.id_for_label }}"
+                   class="{% if form.agree_data_processing.errors %}is-invalid{% endif %}"
+                   {% if form.agree_data_processing.value %}checked{% endif %}
+                   required>
+            <label for="{{ form.agree_data_processing.id_for_label }}">
+                Я даю согласие на обработку персональных данных <span class="text-danger">*</span>
+            </label>
+        </div>
+        {% if form.agree_data_processing.errors %}
+            <div class="field-error">
+                {% for error in form.agree_data_processing.errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="form-submit">
+            <button type="submit" class="btn btn-primary btn-full">
+                Зарегистрироваться
+            </button>
+        </div>
+    </form>
+
+    <div class="form-footer-link">
+        Уже зарегистрированы? <a href="{% url 'login' %}" class="fw-bold">Войти в аккаунт</a>
     </div>
 </div>
 {% endblock %}

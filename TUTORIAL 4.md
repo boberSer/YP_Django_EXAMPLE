@@ -521,8 +521,8 @@ Django использует двухуровневое наследование 
 ```
                ┌─────────────────────────────────────────┐
                │              base.html                  │
-               │  • DOCTYPE, <head>, Bootstrap 5 CSS     │
-               │  • Общая навигационная панель (navbar)   │
+               │  • DOCTYPE, <head>, Pure Native CSS     │
+               │  • Чистая навигационная панель          │
                │  • Блок flash-сообщений (messages)      │
                │                                         │
                │  ┌───────────────────────────────────┐  │
@@ -530,7 +530,7 @@ Django использует двухуровневое наследование 
                │  └───────────────────────────────────┘  │
                │                                         │
                │  • Общий подвал (footer)                │
-               │  • Bootstrap 5 JS Bundle                │
+               │  • Нативный HTML5 <dialog> API          │
                └────────────────────┬────────────────────┘
                                     │
        ┌────────────────────────────┼────────────────────────────┐
@@ -565,16 +565,18 @@ Django использует двухуровневое наследование 
 ---
 
 ### Базовый каркас пользовательского интерфейса
-#### 1. [templates/base.html](file:///C:/Users/fer/PycharmProjects/YP_Django_3/design_studio/templates/base.html) — Базовый скелет и навигация
-- **Светлая легкая тема:** Навбар `navbar-light bg-white border-bottom` обеспечивает легкий современный вид без тяжелых темных заливок.
-- **Условный рендеринг пунктов меню:**
-  - Гость видит: «Главная», кнопки «Вход» и «Регистрация».
-  - Клиент видит: «Мои заявки», «+ Создать заявку», имя пользователя и кнопку «Выход».
-  - Администратор видит: пункт «Панель управления» и прямую ссылку «Superadmin» на `/superadmin`.
+#### 1. [templates/base.html](file:///C:/Users/fer/PycharmProjects/YP_Django_3/design_studio/templates/base.html) — Базовый скелет и чистая навигация (Pure Native CSS)
+- **Архитектура чистого CSS (100% Native, без Bootstrap):**  
+  Из базового шаблона полностью исключены внешние CDN-зависимости (Bootstrap CSS, Bootstrap Icons, Bootstrap JS). Интерфейс построен на принципах бескомпромиссного брутализма и минимализма: строгая монохромная палитра, четкие рамки, моноширинный шрифт, полное отсутствие скруглений и теней.
+- **Адаптивное меню навигации:**
+  Контейнер `.site-header` и `.header-inner` используют Flexbox-раскладку без JavaScript:
+  - Гость видит: логотип `DESIGN.PRO`, ссылку «Главная», кнопки `[ Вход ]` и `[ Регистрация ]`.
+  - Авторизованный клиент видит: пункты «Мои заявки», «+ Создать заявку», блок профиля с логином/ФИО и кнопку `[ Выход ]`.
+  - Администратор дополнительно видит: акцентную ссылку «Панель управления» и прямую ссылку в админку Django (`/superadmin/`).
 - **Вывод Flash-сообщений (`messages`):**  
-  Цикл `{% for message in messages %}` выводит уведомления фреймворка `django.contrib.messages` с соответствующими классами Bootstrap (`alert-success`, `alert-danger`, `alert-info`).
-- **Липкий футер (Sticky Footer):**  
-  Контейнер `body` имеет классы `d-flex flex-column min-vh-100`, а `main` — класс `flex-grow-1`. Благодаря этому футер всегда прижат к низу экрана, даже если на странице мало содержимого.
+  Контейнер `.messages-container` отображает уведомления фреймворка `django.contrib.messages` (`alert-success`, `alert-danger`, `alert-info`) с нативной кнопкой закрытия `[X]`, удаляющей блок через `this.parentElement.remove()` без библиотек.
+- **Липкий подвал (Sticky Footer на Flexbox):**  
+  Тело документа `body` имеет стили `display: flex; flex-direction: column; min-height: 100vh;`, а контейнер `main` занимает всё свободное пространство (`flex-grow: 1`), прижимая `.site-footer` к низу окна при любом объеме контента.
 
 #### Полный код `templates/base.html` (Базовый каркас):
 Файл: [templates/base.html](file:///C:/Users/fer/PycharmProjects/YP_DJANGO_3/design_studio/templates/base.html)
@@ -588,116 +590,710 @@ Django использует двухуровневое наследование 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Design.pro — Студия дизайна интерьеров{% endblock %}</title>
-    <!-- Bootstrap 5 CSS (чистый, легкий интерфейс) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <!-- Чистый CSS без Bootstrap -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3">
 </head>
-<body class="d-flex flex-column min-vh-100 bg-white text-dark">
+<body>
 
-    <!-- Легкое, понятное меню навигации -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top py-2">
-        <div class="container">
-            <a class="navbar-brand fw-bold fs-4 text-dark d-flex align-items-center gap-1" href="{% url 'index' %}">
-                <i class="bi bi-house-door text-primary"></i> Design<span class="text-primary">.pro</span>
+    <!-- Шапка и главное меню -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a class="site-logo" href="{% url 'index' %}">
+                Design<span>.pro</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
-                <span class="navbar-toggler-icon"></span>
-            </button>
 
-            <div class="collapse navbar-collapse" id="navMenu">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active fw-semibold text-primary{% endif %}" href="{% url 'index' %}">Главная</a>
-                    </li>
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'cabinet' %}active fw-semibold text-primary{% endif %}" href="{% url 'cabinet' %}">Мои заявки</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'application-create' %}active fw-semibold text-primary{% endif %}" href="{% url 'application-create' %}">+ Создать заявку</a>
-                        </li>
-                        {% if user.is_staff or user.is_superuser %}
-                            <li class="nav-item">
-                                <a class="nav-link text-warning-emphasis {% if request.resolver_match.url_name == 'admin_panel' %}active fw-semibold{% endif %}" href="{% url 'admin_panel' %}">Панель управления</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-secondary" href="/superadmin/" target="_blank">Superadmin</a>
-                            </li>
-                        {% endif %}
+            <nav class="main-nav">
+                <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">Главная</a>
+                {% if user.is_authenticated %}
+                    <a class="nav-link {% if request.resolver_match.url_name == 'cabinet' %}active{% endif %}" href="{% url 'cabinet' %}">Мои заявки</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'application-create' %}active{% endif %}" href="{% url 'application-create' %}">+ Создать заявку</a>
+                    {% if user.is_staff or user.is_superuser %}
+                        <a class="nav-link admin-link {% if request.resolver_match.url_name == 'admin_panel' %}active{% endif %}" href="{% url 'admin_panel' %}">Панель управления</a>
+                        <a class="nav-link superadmin-link" href="/superadmin/" target="_blank">Superadmin</a>
                     {% endif %}
-                </ul>
+                {% endif %}
+            </nav>
 
-                <div class="d-flex align-items-center gap-2">
-                    {% if user.is_authenticated %}
-                        <span class="navbar-text me-2 small text-muted">
-                            <i class="bi bi-person"></i> {{ user.username }}{% if user.fio %} ({{ user.fio }}){% endif %}
-                        </span>
-                        <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">Выход</a>
-                    {% else %}
-                        <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm px-3">Вход</a>
-                        <a href="{% url 'register' %}" class="btn btn-primary btn-sm px-3">Регистрация</a>
-                    {% endif %}
-                </div>
+            <div class="user-block">
+                {% if user.is_authenticated %}
+                    <span class="user-info">
+                        {{ user.username }}{% if user.fio %} ({{ user.fio }}){% endif %}
+                    </span>
+                    <a href="{% url 'logout' %}" class="btn btn-sm btn-danger">Выход</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-sm">Вход</a>
+                    <a href="{% url 'register' %}" class="btn btn-sm btn-primary">Регистрация</a>
+                {% endif %}
             </div>
         </div>
-    </nav>
+    </header>
 
-    <!-- Сообщения (успех, ошибка, предупреждение) -->
-    <div class="container mt-3">
+    <!-- Сообщения системы -->
+    <div class="container messages-container">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show py-2 small" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">
+                    <span>{{ message }}</span>
+                    <button type="button" class="alert-close" onclick="this.parentElement.remove()" title="Закрыть">&times;</button>
                 </div>
             {% endfor %}
         {% endif %}
     </div>
 
-    <!-- Основной контент -->
-    <main class="flex-grow-1 py-4">
+    <!-- Основной контент страницы -->
+    <main class="container main-content">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Простой подвал -->
-    <footer class="border-top py-3 mt-auto bg-light text-muted small">
-        <div class="container d-flex flex-wrap justify-content-between align-items-center">
+    <!-- Подвал сайта -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
             <span>© 2026 Студия дизайна интерьеров <strong>Design.pro</strong></span>
-            <span>Порт: <strong>8089</strong> | Админка: <a href="/superadmin" class="text-decoration-none">/superadmin</a></span>
+            <span>Порт: <strong>8089</strong> | Админка Django: <a href="/superadmin" target="_blank">/superadmin</a></span>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
 ```
 
-#### Полный код `static/css/style.css` (Минималистичные стили):
+#### Полный код `static/css/style.css` (Чистый CSS без Bootstrap):
 Файл: [static/css/style.css](file:///C:/Users/fer/PycharmProjects/YP_DJANGO_3/design_studio/static/css/style.css)
 
-### 9. `static/css/style.css` (Минималистичные стили):
+> **Основные блоки стилей:**
+> 1. Базовые стили (`body`, шрифты, ссылки, контейнер `.container`).
+> 2. Шапка сайта и меню (`.site-header`, `.site-logo`, `.nav-link`, `.user-block`).
+> 3. Кнопки (`.btn`, `.btn-primary`, `.btn-danger`, `.btn-success`).
+> 4. Карточки и промо-блок (`.box`, `.hero-box`, счетчик заявок `.counter-box`, карточки проектов `.project-card`).
+> 5. Фильтрация и таблицы данных (`.filter-group`, `.table-wrap`, `table`, статусные бейджи `.badge`).
+> 6. Формы и подсветка валидации (`.form-box`, `input`, `textarea`, `.is-invalid`, `.field-error`).
+> 7. Системные уведомления (`.alert`) и нативные модальные окна (`dialog`).
+> 8. Подвал сайта (`.site-footer`).
+
+### 9. `static/css/style.css` (Структурированный чистый CSS):
 ```css
-/* Минималистичные стили для легковесного интерфейса Design.pro */
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    color: #212529;
+/* Основные стили сайта Design.pro */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-.table th {
+body {
+    font-family: Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #f4f6f9;
+    color: #212529;
+    line-height: 1.5;
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.container {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+/* Шапка сайта и меню */
+.site-header {
+    background: #ffffff;
+    border-bottom: 1px solid #dee2e6;
+    padding: 12px 0;
+    margin-bottom: 25px;
+}
+
+.header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.site-logo {
+    font-size: 20px;
+    font-weight: bold;
+    color: #212529;
+    text-decoration: none;
+}
+
+.site-logo span {
+    color: #0d6efd;
+}
+
+.site-logo:hover {
+    text-decoration: none;
+}
+
+.main-nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.nav-link {
+    color: #495057;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.nav-link:hover {
+    background-color: #e9ecef;
+    color: #212529;
+    text-decoration: none;
+}
+
+.nav-link.active {
+    background-color: #0d6efd;
+    color: #ffffff;
+}
+
+.nav-link.admin-link {
+    color: #856404;
+    background-color: #fff3cd;
+}
+
+.nav-link.admin-link:hover {
+    background-color: #ffe69c;
+}
+
+.user-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-info {
+    font-size: 13px;
+    color: #6c757d;
+    background: #e9ecef;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+/* Кнопки */
+.btn,
+button,
+input[type="submit"],
+input[type="button"] {
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    border: 1px solid #ced4da;
+    background: #ffffff;
+    color: #212529;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    vertical-align: middle;
+}
+
+.btn:hover,
+button:hover,
+input[type="submit"]:hover {
+    background: #e9ecef;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: #0b5ed7;
+    border-color: #0a58ca;
+    color: #ffffff;
+}
+
+.btn-danger {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background: #bb2d3b;
+    border-color: #b02a37;
+    color: #ffffff;
+}
+
+.btn-success {
+    background: #198754;
+    border-color: #198754;
+    color: #ffffff;
+}
+
+.btn-success:hover {
+    background: #157347;
+    border-color: #146c43;
+    color: #ffffff;
+}
+
+.btn-sm {
+    padding: 3px 8px;
+    font-size: 12px;
+}
+
+/* Блоки и карточки */
+.box {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.box-title {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* Промо блок главной страницы */
+.hero-box {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 25px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.hero-box > div:first-child {
+    flex: 1 1 500px;
+}
+
+.hero-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.hero-desc {
+    color: #6c757d;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+/* Счетчик заявок в работе */
+.counter-box {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+    min-width: 240px;
+}
+
+.counter-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #6c757d;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.counter-number {
+    font-size: 42px;
+    font-weight: bold;
+    color: #0d6efd;
+    margin: 5px 0;
+    line-height: 1;
+}
+
+.counter-caption {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* Сетка проектов */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.project-card {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.project-card img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    display: block;
+    background: #e9ecef;
+}
+
+.project-placeholder {
+    width: 100%;
+    height: 160px;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    font-size: 13px;
+}
+
+.project-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.project-title {
+    font-size: 15px;
+    font-weight: bold;
+    margin: 6px 0 4px;
+}
+
+.project-desc {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 10px;
+    flex-grow: 1;
+}
+
+.project-date {
+    font-size: 11px;
+    color: #adb5bd;
+    border-top: 1px solid #f1f3f5;
+    padding-top: 6px;
+}
+
+/* Фильтры */
+.filter-group {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    background: #e9ecef;
+    color: #495057;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.filter-btn:hover {
+    background: #dee2e6;
+    text-decoration: none;
+}
+
+.filter-btn.active {
+    background: #0d6efd;
+    color: #ffffff;
+}
+
+/* Таблицы */
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    background: #ffffff;
+    margin: 15px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+th, td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: middle;
+    text-align: left;
+}
+
+th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+tr:hover td {
+    background: #f8f9fa;
+}
+
+/* Бейджи */
+.badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
     font-weight: 600;
 }
 
-.object-fit-cover {
-    object-fit: cover;
+.badge-new {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
 }
 
-.invalid-feedback {
+.badge-in_progress,
+.badge-progress {
+    background: #cff4fc;
+    color: #055160;
+    border: 1px solid #b6effb;
+}
+
+.badge-completed {
+    background: #d1e7dd;
+    color: #0f5132;
+    border: 1px solid #badbcc;
+}
+
+.badge-category {
+    background: #e9ecef;
+    color: #495057;
+}
+
+/* Формы */
+.form-box {
+    max-width: 520px;
+    margin: 30px auto;
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 25px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label,
+.form-label {
     display: block;
-    font-size: 0.8rem;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 5px;
 }
 
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="file"],
+textarea,
+select,
+.form-control,
+.form-select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #ffffff;
+    color: #212529;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #86b7fe;
+    outline: 0;
+}
+
+.is-invalid {
+    border-color: #dc3545 !important;
+    background-color: #fff8f8;
+}
+
+.field-error,
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+
+.field-help,
+.form-text {
+    color: #6c757d;
+    font-size: 11px;
+    margin-top: 3px;
+    display: block;
+}
+
+.checkbox-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+}
+
+.checkbox-group label {
+    margin: 0;
+    font-weight: normal;
+    font-size: 13px;
+}
+
+/* Сообщения / Alerts */
+.messages-container {
+    margin-bottom: 15px;
+}
+
+.alert {
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid transparent;
+    font-size: 13px;
+}
+
+.alert-success {
+    background: #d1e7dd;
+    color: #0f5132;
+    border-color: #badbcc;
+}
+
+.alert-danger,
+.alert-error {
+    background: #f8d7da;
+    color: #842029;
+    border-color: #f5c2c7;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    color: #664d03;
+    border-color: #ffecb5;
+}
+
+.alert-info {
+    background: #cff4fc;
+    color: #055160;
+    border-color: #b6effb;
+}
+
+.alert-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+}
+
+.alert-close:hover {
+    opacity: 1;
+}
+
+/* Диалоги (HTML5 dialog) */
+dialog {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 450px;
+    width: 90%;
+    margin: auto;
+}
+
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.dialog-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Подвал */
+.site-footer {
+    background: #ffffff;
+    border-top: 1px solid #dee2e6;
+    padding: 15px 0;
+    margin-top: auto;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Вспомогательные классы */
+.text-danger { color: #dc3545 !important; }
+.text-success { color: #198754 !important; }
+.text-muted { color: #6c757d !important; }
+.text-center { text-align: center !important; }
+.text-end { text-align: right !important; }
+.fw-bold { font-weight: bold !important; }
+.small { font-size: 12px !important; }
 ```
 
 ---
@@ -840,82 +1436,83 @@ urlpatterns = [
 {% block title %}Главная — Design.pro{% endblock %}
 
 {% block content %}
-<div class="container">
-
-    <!-- Простой информационный блок -->
-    <div class="p-4 p-md-5 mb-4 bg-light rounded-3 border">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <h1 class="h2 fw-bold text-dark mb-2">Студия интерьеров «Design.pro»</h1>
-                <p class="text-secondary mb-3">
-                    Проектирование и создание вариантов оформления интерьеров жилых помещений. Загрузите план вашего помещения, и дизайнеры подготовят индивидуальный проект.
-                </p>
-                <div class="d-flex gap-2">
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'application-create' %}" class="btn btn-primary">Создать заявку</a>
-                        <a href="{% url 'cabinet' %}" class="btn btn-outline-secondary">Мои заявки</a>
-                    {% else %}
-                        <a href="{% url 'register' %}" class="btn btn-primary">Регистрация</a>
-                        <a href="{% url 'login' %}" class="btn btn-outline-primary">Вход в кабинет</a>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Счетчик по ТЗ: Количество заявок в статусе "Принято в работу" -->
-            <div class="col-md-4 mt-3 mt-md-0 text-center">
-                <div class="p-3 bg-white border rounded-3 shadow-sm">
-                    <div class="text-muted small text-uppercase fw-semibold">Заявок в работе прямо сейчас</div>
-                    <div class="display-4 fw-bold text-primary my-1" id="in-progress-counter">{{ in_progress_count }}</div>
-                    <div class="text-muted small">В статусе «Принято в работу»</div>
-                </div>
-            </div>
+<!-- Информационный промо-блок студии -->
+<div class="hero-box">
+    <div class="hero-content">
+        <h1 class="hero-title">
+            Студия интерьеров «Design.pro»
+        </h1>
+        <p class="hero-desc">
+            Проектирование и создание вариантов оформления интерьеров жилых помещений. Загрузите план вашего помещения, и дизайнеры подготовят индивидуальный проект.
+        </p>
+        <div class="hero-actions">
+            {% if user.is_authenticated %}
+                <a href="{% url 'application-create' %}" class="btn btn-primary">+ Создать заявку</a>
+                <a href="{% url 'cabinet' %}" class="btn">Мои заявки</a>
+            {% else %}
+                <a href="{% url 'register' %}" class="btn btn-primary">Регистрация</a>
+                <a href="{% url 'login' %}" class="btn">Вход в кабинет</a>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Раздел: Последние выполненные проекты (не более 4) -->
-    <div class="my-4">
-        <h3 class="h4 fw-bold mb-3">Последние выполненные проекты</h3>
+    <!-- Счетчик по ТЗ: Количество заявок в статусе "Принято в работу" -->
+    <div class="counter-box">
+        <div class="counter-label">Заявок в работе сейчас</div>
+        <div class="counter-number" id="in-progress-counter">{{ in_progress_count }}</div>
+        <div class="counter-caption">В статусе «Принято в работу»</div>
+    </div>
+</div>
 
-        {% if completed_apps %}
-            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-3">
-                {% for app in completed_apps %}
-                    <div class="col">
-                        <div class="card h-100 border shadow-sm">
-                            <!-- Фотография дизайна или плана по ТЗ -->
-                            {% if app.design_image %}
-                                <img src="{{ app.design_image.url }}" class="card-img-top object-fit-cover" alt="{{ app.title }}" style="height: 160px;">
-                            {% elif app.photo %}
-                                <img src="{{ app.photo.url }}" class="card-img-top object-fit-cover" alt="{{ app.title }}" style="height: 160px;">
-                            {% else %}
-                                <div class="bg-light d-flex align-items-center justify-content-center text-muted" style="height: 160px;">
-                                    Нет фото
-                                </div>
-                            {% endif %}
-
-                            <div class="card-body p-3 d-flex flex-column">
-                                <span class="badge bg-secondary mb-2 align-self-start">{{ app.category.name }}</span>
-                                <h6 class="card-title fw-bold mb-1 text-truncate" title="{{ app.title }}">{{ app.title }}</h6>
-                                <p class="card-text text-muted small flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                    {{ app.description }}
-                                </p>
-                                <div class="text-muted small pt-2 border-top mt-2">
-                                    <i class="bi bi-calendar"></i> {{ app.created_at|date:"d.m.Y H:i" }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="p-4 text-center bg-light border rounded">
-                <p class="text-muted mb-0">Пока нет выполненных проектов со статусом «Выполнено».</p>
-            </div>
-        {% endif %}
+<!-- Раздел: Последние выполненные проекты (не более 4) -->
+<div class="box">
+    <div class="box-header">
+        <div class="box-title">Последние выполненные проекты</div>
+        <span class="badge badge-category">до 4 проектов</span>
     </div>
 
+    {% if completed_apps %}
+        <div class="cards-grid">
+            {% for app in completed_apps %}
+                <div class="project-card">
+                    <!-- Фотография дизайна или плана по ТЗ -->
+                    {% if app.design_image %}
+                        <img src="{{ app.design_image.url }}" alt="{{ app.title }}">
+                    {% elif app.photo %}
+                        <img src="{{ app.photo.url }}" alt="{{ app.title }}">
+                    {% else %}
+                        <div class="project-placeholder">
+                            Изображение отсутствует
+                        </div>
+                    {% endif %}
+
+                    <div class="project-body">
+                        <div>
+                            <span class="badge badge-category">{{ app.category.name }}</span>
+                        </div>
+
+                        <div class="project-title" title="{{ app.title }}">
+                            {{ app.title }}
+                        </div>
+
+                        <div class="project-desc">
+                            {{ app.description }}
+                        </div>
+
+                        <div class="project-date">
+                            {{ app.created_at|date:"d.m.Y H:i" }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            Пока нет выполненных проектов со статусом «Выполнено».
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
-
 ```
 
 ---
@@ -938,158 +1535,148 @@ urlpatterns = [
 {% block title %}Регистрация — Design.pro{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card border-0 shadow rounded-4 p-4 p-md-5 bg-white">
-                <div class="text-center mb-4">
-                    <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-3">
-                        <i class="bi bi-person-plus-fill fs-2"></i>
-                    </div>
-                    <h2 class="fw-bold">Регистрация в Design.pro</h2>
-                    <p class="text-muted small">Заполните поля для создания учетной записи</p>
-                </div>
+<div class="form-box">
+    <div class="form-header">
+        <h2 class="form-title">Регистрация в Design.pro</h2>
+        <div class="field-help">Заполните поля для создания учетной записи пользователя</div>
+    </div>
 
-                <form method="post" novalidate>
-                    {% csrf_token %}
+    <form method="post" novalidate>
+        {% csrf_token %}
 
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger py-2 small">
-                            {% for error in form.non_field_errors %}
-                                <div><i class="bi bi-exclamation-circle me-1"></i> {{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-
-                    <!-- ФИО -->
-                    <div class="mb-3">
-                        <label for="{{ form.fio.id_for_label }}" class="form-label fw-semibold">
-                            {{ form.fio.label }} <span class="text-danger">*</span>
-                        </label>
-                        <input type="text"
-                               name="{{ form.fio.html_name }}"
-                               id="{{ form.fio.id_for_label }}"
-                               value="{{ form.fio.value|default:'' }}"
-                               class="form-control {% if form.fio.errors %}is-invalid{% endif %}"
-                               placeholder="Иванов Иван Иванович"
-                               required>
-                        <div class="form-text small">Только кириллические буквы, дефис и пробелы</div>
-                        {% if form.fio.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.fio.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Логин -->
-                    <div class="mb-3">
-                        <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">
-                            {{ form.username.label }} <span class="text-danger">*</span>
-                        </label>
-                        <input type="text"
-                               name="{{ form.username.html_name }}"
-                               id="{{ form.username.id_for_label }}"
-                               value="{{ form.username.value|default:'' }}"
-                               class="form-control {% if form.username.errors %}is-invalid{% endif %}"
-                               placeholder="ivanov-ivan"
-                               required>
-                        <div class="form-text small">Только латинские буквы и дефис, уникальный</div>
-                        {% if form.username.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.username.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Email -->
-                    <div class="mb-3">
-                        <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
-                            {{ form.email.label }} <span class="text-danger">*</span>
-                        </label>
-                        <input type="email"
-                               name="{{ form.email.html_name }}"
-                               id="{{ form.email.id_for_label }}"
-                               value="{{ form.email.value|default:'' }}"
-                               class="form-control {% if form.email.errors %}is-invalid{% endif %}"
-                               placeholder="ivanov@example.com"
-                               required>
-                        {% if form.email.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.email.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Пароль -->
-                    <div class="mb-3">
-                        <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">
-                            {{ form.password.label }} <span class="text-danger">*</span>
-                        </label>
-                        <input type="password"
-                               name="{{ form.password.html_name }}"
-                               id="{{ form.password.id_for_label }}"
-                               class="form-control {% if form.password.errors %}is-invalid{% endif %}"
-                               placeholder="Введите надежный пароль"
-                               required>
-                        {% if form.password.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.password.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Повтор пароля -->
-                    <div class="mb-3">
-                        <label for="{{ form.password_confirm.id_for_label }}" class="form-label fw-semibold">
-                            {{ form.password_confirm.label }} <span class="text-danger">*</span>
-                        </label>
-                        <input type="password"
-                               name="{{ form.password_confirm.html_name }}"
-                               id="{{ form.password_confirm.id_for_label }}"
-                               class="form-control {% if form.password_confirm.errors %}is-invalid{% endif %}"
-                               placeholder="Повторите пароль"
-                               required>
-                        {% if form.password_confirm.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.password_confirm.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Согласие на обработку ПДн -->
-                    <div class="mb-4 form-check">
-                        <input type="checkbox"
-                               name="{{ form.agree_data_processing.html_name }}"
-                               id="{{ form.agree_data_processing.id_for_label }}"
-                               class="form-check-input {% if form.agree_data_processing.errors %}is-invalid{% endif %}"
-                               {% if form.agree_data_processing.value %}checked{% endif %}
-                               required>
-                        <label class="form-check-label small" for="{{ form.agree_data_processing.id_for_label }}">
-                            Я даю согласие на обработку персональных данных <span class="text-danger">*</span>
-                        </label>
-                        {% if form.agree_data_processing.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.agree_data_processing.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">
-                        <i class="bi bi-check2-circle me-1"></i> Зарегистрироваться
-                    </button>
-                </form>
-
-                <hr class="my-4 text-secondary opacity-25">
-
-                <div class="text-center small">
-                    Уже зарегистрированы? <a href="{% url 'login' %}" class="fw-semibold text-decoration-none">Войти в аккаунт</a>
-                </div>
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
             </div>
+        {% endif %}
+
+        <!-- ФИО -->
+        <div class="form-group">
+            <label for="{{ form.fio.id_for_label }}">
+                {{ form.fio.label }} <span class="text-danger">*</span>
+            </label>
+            <input type="text"
+                   name="{{ form.fio.html_name }}"
+                   id="{{ form.fio.id_for_label }}"
+                   value="{{ form.fio.value|default:'' }}"
+                   class="{% if form.fio.errors %}is-invalid{% endif %}"
+                   placeholder="Иванов Иван Иванович"
+                   required>
+            <div class="field-help">Только кириллические буквы, дефис и пробелы</div>
+            {% if form.fio.errors %}
+                <div class="field-error">
+                    {% for error in form.fio.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
         </div>
+
+        <!-- Логин -->
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}">
+                {{ form.username.label }} <span class="text-danger">*</span>
+            </label>
+            <input type="text"
+                   name="{{ form.username.html_name }}"
+                   id="{{ form.username.id_for_label }}"
+                   value="{{ form.username.value|default:'' }}"
+                   class="{% if form.username.errors %}is-invalid{% endif %}"
+                   placeholder="ivanov-ivan"
+                   required>
+            <div class="field-help">Только латинские буквы и дефис, уникальный</div>
+            {% if form.username.errors %}
+                <div class="field-error">
+                    {% for error in form.username.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+            <label for="{{ form.email.id_for_label }}">
+                {{ form.email.label }} <span class="text-danger">*</span>
+            </label>
+            <input type="email"
+                   name="{{ form.email.html_name }}"
+                   id="{{ form.email.id_for_label }}"
+                   value="{{ form.email.value|default:'' }}"
+                   class="{% if form.email.errors %}is-invalid{% endif %}"
+                   placeholder="ivanov@example.com"
+                   required>
+            {% if form.email.errors %}
+                <div class="field-error">
+                    {% for error in form.email.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Пароль -->
+        <div class="form-group">
+            <label for="{{ form.password.id_for_label }}">
+                {{ form.password.label }} <span class="text-danger">*</span>
+            </label>
+            <input type="password"
+                   name="{{ form.password.html_name }}"
+                   id="{{ form.password.id_for_label }}"
+                   class="{% if form.password.errors %}is-invalid{% endif %}"
+                   placeholder="Введите пароль"
+                   required>
+            {% if form.password.errors %}
+                <div class="field-error">
+                    {% for error in form.password.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Повтор пароля -->
+        <div class="form-group">
+            <label for="{{ form.password_confirm.id_for_label }}">
+                {{ form.password_confirm.label }} <span class="text-danger">*</span>
+            </label>
+            <input type="password"
+                   name="{{ form.password_confirm.html_name }}"
+                   id="{{ form.password_confirm.id_for_label }}"
+                   class="{% if form.password_confirm.errors %}is-invalid{% endif %}"
+                   placeholder="Повторите пароль"
+                   required>
+            {% if form.password_confirm.errors %}
+                <div class="field-error">
+                    {% for error in form.password_confirm.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Согласие на обработку ПДн -->
+        <div class="checkbox-group">
+            <input type="checkbox"
+                   name="{{ form.agree_data_processing.html_name }}"
+                   id="{{ form.agree_data_processing.id_for_label }}"
+                   class="{% if form.agree_data_processing.errors %}is-invalid{% endif %}"
+                   {% if form.agree_data_processing.value %}checked{% endif %}
+                   required>
+            <label for="{{ form.agree_data_processing.id_for_label }}">
+                Я даю согласие на обработку персональных данных <span class="text-danger">*</span>
+            </label>
+        </div>
+        {% if form.agree_data_processing.errors %}
+            <div class="field-error">
+                {% for error in form.agree_data_processing.errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="form-submit">
+            <button type="submit" class="btn btn-primary btn-full">
+                Зарегистрироваться
+            </button>
+        </div>
+    </form>
+
+    <div class="form-footer-link">
+        Уже зарегистрированы? <a href="{% url 'login' %}" class="fw-bold">Войти в аккаунт</a>
     </div>
 </div>
 {% endblock %}
-
 ```
 
 ---
@@ -1104,85 +1691,75 @@ urlpatterns = [
 {% block title %}Вход — Design.pro{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            <div class="card border-0 shadow rounded-4 p-4 p-md-5 bg-white">
-                <div class="text-center mb-4">
-                    <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-3">
-                        <i class="bi bi-box-arrow-in-right fs-2"></i>
-                    </div>
-                    <h2 class="fw-bold">Авторизация</h2>
-                    <p class="text-muted small">Введите логин и пароль для входа в систему</p>
-                </div>
+<div class="form-box">
+    <div class="form-header">
+        <h2 class="form-title">Авторизация</h2>
+        <div class="field-help">Введите ваш логин и пароль для входа в систему</div>
+    </div>
 
-                <form method="post" novalidate>
-                    {% csrf_token %}
+    <form method="post" novalidate>
+        {% csrf_token %}
 
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger py-2 small mb-3">
-                            {% for error in form.non_field_errors %}
-                                <div><i class="bi bi-exclamation-triangle-fill me-1"></i> {{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-
-                    <div class="mb-3">
-                        <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">
-                            Логин <span class="text-danger">*</span>
-                        </label>
-                        <input type="text"
-                               name="{{ form.username.html_name }}"
-                               id="{{ form.username.id_for_label }}"
-                               value="{{ form.username.value|default:'' }}"
-                               class="form-control {% if form.username.errors or form.non_field_errors %}is-invalid{% endif %}"
-                               placeholder="Введите логин"
-                               required autofocus>
-                        {% if form.username.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.username.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">
-                            Пароль <span class="text-danger">*</span>
-                        </label>
-                        <input type="password"
-                               name="{{ form.password.html_name }}"
-                               id="{{ form.password.id_for_label }}"
-                               class="form-control {% if form.password.errors or form.non_field_errors %}is-invalid{% endif %}"
-                               placeholder="Введите пароль"
-                               required>
-                        {% if form.password.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.password.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">
-                        <i class="bi bi-box-arrow-in-right me-1"></i> Войти
-                    </button>
-                </form>
-
-                <div class="alert alert-info py-2 px-3 small mt-4 mb-0 bg-light border">
-                    <i class="bi bi-info-circle-fill text-primary me-1"></i>
-                    <strong>Данные администратора:</strong> логин <code>admin</code>, пароль <code>admin</code>
-                </div>
-
-                <hr class="my-4 text-secondary opacity-25">
-
-                <div class="text-center small">
-                    Еще нет аккаунта? <a href="{% url 'register' %}" class="fw-semibold text-decoration-none">Зарегистрироваться</a>
-                </div>
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
             </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}">
+                Логин <span class="text-danger">*</span>
+            </label>
+            <input type="text"
+                   name="{{ form.username.html_name }}"
+                   id="{{ form.username.id_for_label }}"
+                   value="{{ form.username.value|default:'' }}"
+                   class="{% if form.username.errors or form.non_field_errors %}is-invalid{% endif %}"
+                   placeholder="Введите логин"
+                   required autofocus>
+            {% if form.username.errors %}
+                <div class="field-error">
+                    {% for error in form.username.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
         </div>
+
+        <div class="form-group">
+            <label for="{{ form.password.id_for_label }}">
+                Пароль <span class="text-danger">*</span>
+            </label>
+            <input type="password"
+                   name="{{ form.password.html_name }}"
+                   id="{{ form.password.id_for_label }}"
+                   class="{% if form.password.errors or form.non_field_errors %}is-invalid{% endif %}"
+                   placeholder="Введите пароль"
+                   required>
+            {% if form.password.errors %}
+                <div class="field-error">
+                    {% for error in form.password.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-submit">
+            <button type="submit" class="btn btn-primary btn-full">
+                Войти в систему
+            </button>
+        </div>
+    </form>
+
+    <div class="credentials-hint">
+        <strong>Данные администратора:</strong><br>
+        логин: <code>admin</code>, пароль: <code>admin</code>
+    </div>
+
+    <div class="form-footer-link">
+        Еще нет аккаунта? <a href="{% url 'register' %}" class="fw-bold">Зарегистрироваться</a>
     </div>
 </div>
 {% endblock %}
-
 ```
 
 ---
@@ -1399,31 +1976,34 @@ urlpatterns += [
 {% block title %}Личный кабинет — Design.pro{% endblock %}
 
 {% block content %}
-<div class="container">
-
-    <!-- Заголовок и кнопка -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="box">
+    <!-- Верхний блок: заголовок и действие -->
+    <div class="box-header">
         <div>
-            <h2 class="h3 fw-bold mb-0">Мои заявки на дизайн</h2>
-            <div class="text-muted small">Пользователь: {{ user.fio|default:user.username }}</div>
+            <h2 class="box-title">Мои заявки на дизайн</h2>
+            <div class="box-subtitle">
+                Пользователь: <b>{{ user.fio|default:user.username }}</b>
+            </div>
         </div>
-        <a href="{% url 'application-create' %}" class="btn btn-primary btn-sm">+ Новая заявка</a>
+        <div>
+            <a href="{% url 'application-create' %}" class="btn btn-primary btn-sm">+ Новая заявка</a>
+        </div>
     </div>
 
     <!-- Фильтрация по статусу -->
-    <div class="mb-3 d-flex align-items-center gap-2">
-        <span class="small text-muted">Фильтр:</span>
-        <div class="btn-group btn-group-sm" role="group">
-            <a href="{% url 'cabinet' %}?status=all" class="btn {% if current_filter == 'all' or not current_filter %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+    <div class="filter-bar">
+        <span class="filter-label">Фильтр:</span>
+        <div class="filter-group">
+            <a href="{% url 'cabinet' %}?status=all" class="filter-btn {% if current_filter == 'all' or not current_filter %}active{% endif %}">
                 Все ({{ total_count }})
             </a>
-            <a href="{% url 'cabinet' %}?status=new" class="btn {% if current_filter == 'new' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+            <a href="{% url 'cabinet' %}?status=new" class="filter-btn {% if current_filter == 'new' %}active{% endif %}">
                 Новые ({{ new_count }})
             </a>
-            <a href="{% url 'cabinet' %}?status=in_progress" class="btn {% if current_filter == 'in_progress' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+            <a href="{% url 'cabinet' %}?status=in_progress" class="filter-btn {% if current_filter == 'in_progress' %}active{% endif %}">
                 В работе ({{ in_progress_count }})
             </a>
-            <a href="{% url 'cabinet' %}?status=completed" class="btn {% if current_filter == 'completed' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+            <a href="{% url 'cabinet' %}?status=completed" class="filter-btn {% if current_filter == 'completed' %}active{% endif %}">
                 Выполненные ({{ completed_count }})
             </a>
         </div>
@@ -1431,64 +2011,72 @@ urlpatterns += [
 
     <!-- Таблица заявок -->
     {% if applications %}
-        <div class="table-responsive border rounded bg-white">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light small">
+        <div class="table-wrap">
+            <table>
+                <thead>
                     <tr>
-                        <th>Дата</th>
-                        <th>Название</th>
-                        <th>Категория</th>
-                        <th>План</th>
-                        <th>Статус</th>
+                        <th class="col-date">Дата</th>
+                        <th>Название и описание</th>
+                        <th class="col-category">Категория</th>
+                        <th class="col-thumb">План</th>
+                        <th class="col-status">Статус</th>
                         <th>Ответ студии</th>
-                        <th class="text-end">Действие</th>
+                        <th class="col-action">Действие</th>
                     </tr>
                 </thead>
-                <tbody class="small">
+                <tbody>
                     {% for app in applications %}
                         <tr>
                             <!-- Временная метка по ТЗ -->
-                            <td class="text-nowrap text-muted">{{ app.created_at|date:"d.m.Y H:i" }}</td>
+                            <td class="col-date-text">
+                                {{ app.created_at|date:"d.m.Y H:i" }}
+                            </td>
 
                             <!-- Название и описание по ТЗ -->
                             <td>
-                                <div class="fw-bold">{{ app.title }}</div>
-                                <div class="text-muted" style="max-width: 250px; font-size: 0.85rem;">{{ app.description }}</div>
+                                <div class="app-title">{{ app.title }}</div>
+                                <div class="app-desc">{{ app.description }}</div>
                             </td>
 
                             <!-- Категория заявки по ТЗ -->
-                            <td><span class="badge bg-light text-dark border">{{ app.category.name }}</span></td>
+                            <td>
+                                <span class="badge badge-category">{{ app.category.name }}</span>
+                            </td>
 
                             <!-- Фото помещения -->
                             <td>
                                 {% if app.photo %}
                                     <a href="{{ app.photo.url }}" target="_blank">
-                                        <img src="{{ app.photo.url }}" alt="План" class="rounded border" style="width: 45px; height: 45px; object-fit: cover;">
+                                        <img src="{{ app.photo.url }}" alt="План" class="app-thumb">
                                     </a>
+                                {% else %}
+                                    <span class="text-muted">—</span>
                                 {% endif %}
                             </td>
 
                             <!-- Статус заявки по ТЗ -->
                             <td>
                                 {% if app.status == 'new' %}
-                                    <span class="badge bg-warning text-dark">Новая</span>
+                                    <span class="badge badge-new">Новая</span>
                                 {% elif app.status == 'in_progress' %}
-                                    <span class="badge bg-info text-dark">Принято в работу</span>
+                                    <span class="badge badge-progress">Принято в работу</span>
                                 {% elif app.status == 'completed' %}
-                                    <span class="badge bg-success">Выполнено</span>
+                                    <span class="badge badge-completed">Выполнено</span>
                                 {% endif %}
                             </td>
 
                             <!-- Ответ студии (комментарий или дизайн) -->
                             <td>
                                 {% if app.status == 'in_progress' and app.comment %}
-                                    <span class="text-info-emphasis"><strong>Комментарий:</strong> {{ app.comment }}</span>
+                                    <div class="comment-text"><strong>Комментарий:</strong> {{ app.comment }}</div>
                                 {% elif app.status == 'completed' %}
-                                    <div class="d-flex align-items-center gap-1">
+                                    <div class="completed-reply">
                                         {% if app.design_image %}
-                                            <a href="{{ app.design_image.url }}" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2">Дизайн</a>
+                                            <a href="{{ app.design_image.url }}" target="_blank" class="btn btn-sm btn-success">Дизайн</a>
                                         {% endif %}
-                                        {% if app.comment %}<small class="text-muted">{{ app.comment }}</small>{% endif %}
+                                        {% if app.comment %}
+                                            <span class="comment-note">{{ app.comment }}</span>
+                                        {% endif %}
                                     </div>
                                 {% else %}
                                     <span class="text-muted">—</span>
@@ -1496,35 +2084,33 @@ urlpatterns += [
                             </td>
 
                             <!-- Кнопка удаления (только если статус Новая) -->
-                            <td class="text-end">
+                            <td class="col-action-cell">
                                 {% if app.is_deletable %}
-                                    <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" data-bs-toggle="modal" data-bs-target="#delModal{{ app.pk }}">
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('delModal{{ app.pk }}').showModal()">
                                         Удалить
                                     </button>
 
-                                    <!-- Простое окно подтверждения удаления -->
-                                    <div class="modal fade text-start" id="delModal{{ app.pk }}" tabindex="-1">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <div class="modal-header py-2">
-                                                    <h6 class="modal-title fw-bold">Подтверждение удаления</h6>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    Вы действительно хотите удалить заявку <strong>«{{ app.title }}»</strong>?
-                                                </div>
-                                                <div class="modal-footer py-2">
-                                                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Отмена</button>
-                                                    <form method="post" action="{% url 'application-delete' app.pk %}">
-                                                        {% csrf_token %}
-                                                        <button type="submit" class="btn btn-sm btn-danger">Да, удалить</button>
-                                                    </form>
-                                                </div>
-                                            </div>
+                                    <!-- Нативный диалог подтверждения удаления -->
+                                    <dialog id="delModal{{ app.pk }}">
+                                        <div class="dialog-title text-danger">Подтверждение удаления</div>
+                                        <p class="dialog-message">
+                                            Вы действительно хотите удалить заявку:
+                                            <br>
+                                            <strong>«{{ app.title }}»</strong>?
+                                        </p>
+                                        <div class="alert alert-warning">
+                                            Внимание: данное действие необратимо. Удаление доступно только для заявок со статусом «Новая».
                                         </div>
-                                    </div>
+                                        <div class="dialog-actions">
+                                            <button type="button" class="btn btn-sm" onclick="this.closest('dialog').close()">Отмена</button>
+                                            <form method="post" action="{% url 'application-delete' app.pk %}" class="inline-form">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger btn-sm">Да, удалить</button>
+                                            </form>
+                                        </div>
+                                    </dialog>
                                 {% else %}
-                                    <span class="text-muted small" title="Удалить можно только заявку со статусом «Новая»">Недоступно</span>
+                                    <span class="text-muted small">Недоступно</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -1533,15 +2119,14 @@ urlpatterns += [
             </table>
         </div>
     {% else %}
-        <div class="p-4 text-center border rounded bg-light">
-            <p class="text-muted mb-2">Заявок с выбранным фильтром не найдено.</p>
-            <a href="{% url 'application-create' %}" class="btn btn-sm btn-primary">Создать первую заявку</a>
+        <div class="empty-state">
+            <p class="empty-state-text">Заявок с выбранным фильтром не найдено.</p>
+            <a href="{% url 'application-create' %}" class="btn btn-sm btn-primary">+ Создать первую заявку</a>
         </div>
     {% endif %}
 
 </div>
 {% endblock %}
-
 ```
 
 ---
@@ -1561,69 +2146,66 @@ urlpatterns += [
 {% block title %}Создание заявки — Design.pro{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 650px;">
-    <div class="card border p-4 bg-white">
-        <div class="mb-3">
-            <a href="{% url 'cabinet' %}" class="btn btn-outline-secondary btn-sm mb-2">&larr; Назад к моим заявкам</a>
-            <h3 class="h4 fw-bold mb-1">Новая заявка на дизайн</h3>
-            <p class="text-muted small mb-0">Все поля обязательны для заполнения</p>
+<div class="form-box">
+    <div class="form-header">
+        <a href="{% url 'cabinet' %}" class="btn btn-sm">&larr; Назад к моим заявкам</a>
+        <h2 class="form-title">Новая заявка на дизайн</h2>
+        <div class="field-help">Все поля обязательны для заполнения по ТЗ</div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for err in form.non_field_errors %}<div>{{ err }}</div>{% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Название заявки -->
+        <div class="form-group">
+            <label>Название заявки <span class="text-danger">*</span></label>
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div class="field-error">{% for e in form.title.errors %}{{ e }}{% endfor %}</div>
+            {% endif %}
         </div>
 
-        <form method="post" enctype="multipart/form-data" novalidate>
-            {% csrf_token %}
-
-            {% if form.non_field_errors %}
-                <div class="alert alert-danger py-2 small">
-                    {% for err in form.non_field_errors %}{{ err }}{% endfor %}
-                </div>
+        <!-- Категория заявки -->
+        <div class="form-group">
+            <label>Категория помещения <span class="text-danger">*</span></label>
+            {{ form.category }}
+            {% if form.category.errors %}
+                <div class="field-error">{% for e in form.category.errors %}{{ e }}{% endfor %}</div>
             {% endif %}
+        </div>
 
-            <!-- Название заявки -->
-            <div class="mb-3">
-                <label class="form-label small fw-semibold">Название заявки <span class="text-danger">*</span></label>
-                {{ form.title }}
-                {% if form.title.errors %}
-                    <div class="text-danger small mt-1">{% for e in form.title.errors %}{{ e }}{% endfor %}</div>
-                {% endif %}
-            </div>
+        <!-- Описание заявки -->
+        <div class="form-group">
+            <label>Описание пожеланий к дизайну <span class="text-danger">*</span></label>
+            {{ form.description }}
+            {% if form.description.errors %}
+                <div class="field-error">{% for e in form.description.errors %}{{ e }}{% endfor %}</div>
+            {% endif %}
+        </div>
 
-            <!-- Категория заявки -->
-            <div class="mb-3">
-                <label class="form-label small fw-semibold">Категория <span class="text-danger">*</span></label>
-                {{ form.category }}
-                {% if form.category.errors %}
-                    <div class="text-danger small mt-1">{% for e in form.category.errors %}{{ e }}{% endfor %}</div>
-                {% endif %}
-            </div>
+        <!-- Фото помещения или его план -->
+        <div class="form-group">
+            <label>Фото помещения или план <span class="text-danger">*</span></label>
+            {{ form.photo }}
+            <div class="field-help">Разрешенные форматы: <strong>jpg, jpeg, png, bmp</strong>. Максимальный размер: <strong>до 2 Мб</strong>.</div>
+            {% if form.photo.errors %}
+                <div class="field-error">{% for e in form.photo.errors %}{{ e }}{% endfor %}</div>
+            {% endif %}
+        </div>
 
-            <!-- Описание заявки -->
-            <div class="mb-3">
-                <label class="form-label small fw-semibold">Описание помещения <span class="text-danger">*</span></label>
-                {{ form.description }}
-                {% if form.description.errors %}
-                    <div class="text-danger small mt-1">{% for e in form.description.errors %}{{ e }}{% endfor %}</div>
-                {% endif %}
-            </div>
-
-            <!-- Фото помещения или его план -->
-            <div class="mb-4">
-                <label class="form-label small fw-semibold">Фото помещения или план <span class="text-danger">*</span></label>
-                {{ form.photo }}
-                <div class="text-muted small mt-1">Разрешенные форматы: <strong>jpg, jpeg, png, bmp</strong>. Максимальный размер: <strong>до 2 Мб</strong>.</div>
-                {% if form.photo.errors %}
-                    <div class="text-danger small mt-1">{% for e in form.photo.errors %}{{ e }}{% endfor %}</div>
-                {% endif %}
-            </div>
-
-            <div class="d-flex justify-content-end gap-2">
-                <a href="{% url 'cabinet' %}" class="btn btn-light btn-sm">Отмена</a>
-                <button type="submit" class="btn btn-primary btn-sm px-4">Отправить заявку</button>
-            </div>
-        </form>
-    </div>
+        <div class="form-actions">
+            <a href="{% url 'cabinet' %}" class="btn">Отмена</a>
+            <button type="submit" class="btn btn-primary">Отправить заявку</button>
+        </div>
+    </form>
 </div>
 {% endblock %}
-
 ```
 
 ---
@@ -1638,42 +2220,34 @@ urlpatterns += [
 {% block title %}Удаление заявки — Design.pro{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card border-0 shadow rounded-4 p-4 p-md-5 bg-white text-center">
-                <div class="d-inline-flex p-3 rounded-circle bg-danger bg-opacity-10 text-danger mb-3 mx-auto">
-                    <i class="bi bi-trash3-fill fs-1"></i>
-                </div>
-                <h3 class="fw-bold mb-2">Удаление заявки</h3>
-                <p class="text-secondary mb-4">
-                    Вы действительно уверены, что хотите удалить заявку:
-                    <br>
-                    <strong class="text-dark fs-5">«{{ application.title }}»</strong>?
-                </p>
-
-                <div class="alert alert-warning text-start small mb-4">
-                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                    Внимание: Данное действие необратимо. Удаление доступно только для заявок со статусом <strong>«Новая»</strong>.
-                </div>
-
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="d-flex justify-content-center gap-3">
-                        <a href="{% url 'cabinet' %}" class="btn btn-outline-secondary px-4">
-                            Отмена
-                        </a>
-                        <button type="submit" class="btn btn-danger px-4 fw-semibold">
-                            <i class="bi bi-trash3-fill me-1"></i> Да, удалить
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+<div class="form-box confirm-box">
+    <div class="confirm-icon">
+        &times;
     </div>
+    <h2 class="form-title">Удаление заявки</h2>
+    <p class="dialog-message">
+        Вы действительно хотите безвозвратно удалить заявку:
+        <br>
+        <strong>«{{ application.title }}»</strong>?
+    </p>
+
+    <div class="alert alert-warning">
+        Внимание: данное действие необратимо. Удаление доступно только для заявок со статусом <strong>«Новая»</strong>.
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="confirm-actions">
+            <a href="{% url 'cabinet' %}" class="btn">
+                Отмена
+            </a>
+            <button type="submit" class="btn btn-danger">
+                Да, удалить
+            </button>
+        </div>
+    </form>
 </div>
 {% endblock %}
-
 ```
 
 ---
@@ -1878,212 +2452,202 @@ urlpatterns += [
 {% block title %}Панель администратора — Design.pro{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="admin-header">
+    <div>
+        <h2 class="box-title">Панель администратора</h2>
+        <div class="admin-subtitle">Управление категориями и смена статусов заявок клиентов</div>
+    </div>
+    <div>
+        <a href="/superadmin/" target="_blank" class="btn btn-sm">Django Superadmin &rarr;</a>
+    </div>
+</div>
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h2 class="h3 fw-bold mb-0">Панель администратора</h2>
-            <div class="text-muted small">Управление категориями и смена статусов заявок</div>
-        </div>
-        <div>
-            <a href="/superadmin/" target="_blank" class="btn btn-outline-secondary btn-sm">Django Superadmin</a>
-        </div>
+<!-- БЛОК 1: Управление категориями заявок -->
+<div class="box">
+    <div class="box-header">
+        <div class="box-title">1. Управление категориями заявок</div>
     </div>
 
-    <!-- БЛОК 1: Управление категориями заявок -->
-    <div class="card mb-4 border">
-        <div class="card-header bg-light py-2">
-            <h6 class="mb-0 fw-bold">1. Управление категориями заявок</h6>
+    <div class="cat-manage-grid">
+        <!-- Форма добавления категории -->
+        <div>
+            <form method="post" action="{% url 'admin-add-category' %}" class="cat-add-form">
+                {% csrf_token %}
+                <input type="text" name="name" placeholder="Название новой категории" required class="cat-add-input">
+                <button type="submit" class="btn btn-primary btn-sm">+ Добавить</button>
+            </form>
+            <div class="field-help">Название категории должно быть уникальным</div>
         </div>
-        <div class="card-body">
-            <div class="row g-3 align-items-center">
-                <!-- Форма добавления категории -->
-                <div class="col-md-5">
-                    <form method="post" action="{% url 'admin-add-category' %}" class="d-flex gap-2">
-                        {% csrf_token %}
-                        <input type="text" name="name" class="form-control form-control-sm" placeholder="Название новой категории" required>
-                        <button type="submit" class="btn btn-primary btn-sm text-nowrap">+ Добавить</button>
-                    </form>
-                </div>
-                <!-- Список категорий -->
-                <div class="col-md-7">
-                    <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <span class="small text-muted">Существующие:</span>
-                        {% for cat in categories %}
-                            <div class="badge bg-light text-dark border p-2 d-flex align-items-center gap-1">
-                                <span>{{ cat.name }} ({{ cat.applications.count }})</span>
-                                <button type="button" class="btn-close" style="font-size: 0.55rem;" data-bs-toggle="modal" data-bs-target="#delCat{{ cat.pk }}" title="Удалить категорию"></button>
-                            </div>
 
-                            <!-- Модалка удаления категории (с предупреждением о каскадном удалении) -->
-                            <div class="modal fade text-start" id="delCat{{ cat.pk }}" tabindex="-1">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header py-2">
-                                            <h6 class="modal-title text-danger fw-bold">Удаление категории «{{ cat.name }}»</h6>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body small">
-                                            <strong>Внимание по ТЗ!</strong> При удалении категории будут удалены все заявки данной категории ({{ cat.applications.count }} шт.). Заявки этой категории больше не будут отображаться.
-                                        </div>
-                                        <div class="modal-footer py-2">
-                                            <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Отмена</button>
-                                            <form method="post" action="{% url 'admin-delete-category' cat.pk %}">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-sm btn-danger">Удалить категорию и заявки</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% empty %}
-                            <span class="text-muted small">Категорий пока нет.</span>
-                        {% endfor %}
+        <!-- Список существующих категорий -->
+        <div>
+            <div class="cat-list-title">Существующие категории:</div>
+            <div class="cat-list">
+                {% for cat in categories %}
+                    <div class="cat-tag">
+                        <span><strong>{{ cat.name }}</strong> ({{ cat.applications.count }})</span>
+                        <button type="button" class="btn btn-danger btn-sm cat-del-btn" onclick="document.getElementById('delCat{{ cat.pk }}').showModal()" title="Удалить категорию">&times;</button>
                     </div>
-                </div>
+
+                    <!-- Диалог удаления категории с предупреждением о каскадном удалении -->
+                    <dialog id="delCat{{ cat.pk }}">
+                        <div class="dialog-title text-danger">Удаление категории «{{ cat.name }}»</div>
+                        <div class="alert alert-danger">
+                            <strong>ВНИМАНИЕ ПО ТЗ!</strong> При удалении категории будут каскадно удалены ВСЕ заявки данной категории ({{ cat.applications.count }} шт.).
+                        </div>
+                        <p class="dialog-message">
+                            Вы абсолютно уверены, что хотите безвозвратно удалить категорию <strong>«{{ cat.name }}»</strong>?
+                        </p>
+                        <div class="dialog-actions">
+                            <button type="button" class="btn btn-sm" onclick="this.closest('dialog').close()">Отмена</button>
+                            <form method="post" action="{% url 'admin-delete-category' cat.pk %}" class="inline-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Да, удалить</button>
+                            </form>
+                        </div>
+                    </dialog>
+                {% empty %}
+                    <span class="text-muted">Категорий пока нет.</span>
+                {% endfor %}
             </div>
         </div>
     </div>
+</div>
 
-    <!-- БЛОК 2: Заявки на дизайн и смена статусов -->
-    <div class="card border">
-        <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
-            <h6 class="mb-0 fw-bold">2. Заявки пользователей и смена статусов</h6>
-            <!-- Фильтр -->
-            <div class="btn-group btn-group-sm">
-                <a href="{% url 'admin_panel' %}?status=all" class="btn {% if status_filter == 'all' or not status_filter %}btn-dark{% else %}btn-outline-secondary{% endif %}">Все ({{ total_count }})</a>
-                <a href="{% url 'admin_panel' %}?status=new" class="btn {% if status_filter == 'new' %}btn-dark{% else %}btn-outline-secondary{% endif %}">Новые ({{ new_count }})</a>
-                <a href="{% url 'admin_panel' %}?status=in_progress" class="btn {% if status_filter == 'in_progress' %}btn-dark{% else %}btn-outline-secondary{% endif %}">В работе ({{ in_progress_count }})</a>
-                <a href="{% url 'admin_panel' %}?status=completed" class="btn {% if status_filter == 'completed' %}btn-dark{% else %}btn-outline-secondary{% endif %}">Выполненные ({{ completed_count }})</a>
-            </div>
+<!-- БЛОК 2: Заявки пользователей и смена статусов -->
+<div class="box">
+    <div class="box-header">
+        <div class="box-title">2. Заявки пользователей и смена статусов</div>
+        <div class="filter-group">
+            <a href="{% url 'admin_panel' %}?status=all" class="filter-btn {% if status_filter == 'all' or not status_filter %}active{% endif %}">Все ({{ total_count }})</a>
+            <a href="{% url 'admin_panel' %}?status=new" class="filter-btn {% if status_filter == 'new' %}active{% endif %}">Новые ({{ new_count }})</a>
+            <a href="{% url 'admin_panel' %}?status=in_progress" class="filter-btn {% if status_filter == 'in_progress' %}active{% endif %}">В работе ({{ in_progress_count }})</a>
+            <a href="{% url 'admin_panel' %}?status=completed" class="filter-btn {% if status_filter == 'completed' %}active{% endif %}">Выполненные ({{ completed_count }})</a>
         </div>
+    </div>
 
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 small">
-                <thead class="table-light">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-thumb">№</th>
+                    <th class="col-date">Дата</th>
+                    <th>Клиент</th>
+                    <th>Заявка</th>
+                    <th class="col-category">Категория</th>
+                    <th class="col-category">План/Дизайн</th>
+                    <th class="col-status">Статус</th>
+                    <th class="col-action">Смена статуса</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
                     <tr>
-                        <th>№</th>
-                        <th>Дата</th>
-                        <th>Клиент</th>
-                        <th>Заявка</th>
-                        <th>Категория</th>
-                        <th>План</th>
-                        <th>Статус</th>
-                        <th class="text-end">Смена статуса</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for app in applications %}
-                        <tr>
-                            <td>#{{ app.pk }}</td>
-                            <td class="text-nowrap text-muted">{{ app.created_at|date:"d.m.Y H:i" }}</td>
-                            <td>
-                                <div>{{ app.user.username }}</div>
-                                {% if app.user.fio %}<small class="text-muted">{{ app.user.fio }}</small>{% endif %}
-                            </td>
-                            <td>
-                                <div class="fw-bold">{{ app.title }}</div>
-                                <div class="text-muted" style="max-width: 220px;">{{ app.description|truncatewords:8 }}</div>
-                                {% if app.comment %}<small class="text-info d-block">Коммент: {{ app.comment }}</small>{% endif %}
-                            </td>
-                            <td><span class="badge bg-light text-dark border">{{ app.category.name }}</span></td>
-                            <td>
+                        <td class="col-date-text">#{{ app.pk }}</td>
+                        <td class="col-date-text">
+                            {{ app.created_at|date:"d.m.Y H:i" }}
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ app.user.username }}</div>
+                            {% if app.user.fio %}<div class="text-muted small">{{ app.user.fio }}</div>{% endif %}
+                        </td>
+                        <td>
+                            <div class="app-title">{{ app.title }}</div>
+                            <div class="app-desc">{{ app.description|truncatewords:8 }}</div>
+                            {% if app.comment %}
+                                <div class="comment-text">
+                                    <strong>Коммент:</strong> {{ app.comment }}
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge badge-category">{{ app.category.name }}</span>
+                        </td>
+                        <td>
+                            <div class="table-thumb-cell">
                                 {% if app.photo %}
-                                    <a href="{{ app.photo.url }}" target="_blank">
-                                        <img src="{{ app.photo.url }}" alt="План" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;">
+                                    <a href="{{ app.photo.url }}" target="_blank" title="План помещения">
+                                        <img src="{{ app.photo.url }}" alt="План" class="plan-thumb">
                                     </a>
                                 {% endif %}
                                 {% if app.design_image %}
-                                    <a href="{{ app.design_image.url }}" target="_blank" title="Дизайн">
-                                        <img src="{{ app.design_image.url }}" alt="Дизайн" class="rounded border border-success" style="width: 40px; height: 40px; object-fit: cover;">
+                                    <a href="{{ app.design_image.url }}" target="_blank" title="Готовый дизайн">
+                                        <img src="{{ app.design_image.url }}" alt="Дизайн" class="design-thumb">
                                     </a>
                                 {% endif %}
-                            </td>
-                            <td>
-                                {% if app.status == 'new' %}
-                                    <span class="badge bg-warning text-dark">Новая</span>
-                                {% elif app.status == 'in_progress' %}
-                                    <span class="badge bg-info text-dark">В работе</span>
-                                {% elif app.status == 'completed' %}
-                                    <span class="badge bg-success">Выполнено</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end text-nowrap">
-                                {% if app.can_change_status %}
-                                    <!-- Кнопка 1: В работу -->
-                                    <button type="button" class="btn btn-outline-info btn-sm py-0 px-2" data-bs-toggle="modal" data-bs-target="#inProg{{ app.pk }}">
-                                        В работу
-                                    </button>
+                            </div>
+                        </td>
+                        <td>
+                            {% if app.status == 'new' %}
+                                <span class="badge badge-new">Новая</span>
+                            {% elif app.status == 'in_progress' %}
+                                <span class="badge badge-progress">В работе</span>
+                            {% elif app.status == 'completed' %}
+                                <span class="badge badge-completed">Выполнено</span>
+                            {% endif %}
+                        </td>
+                        <td class="col-action-cell">
+                            {% if app.can_change_status %}
+                                <!-- Кнопка 1: В работу -->
+                                <button type="button" class="btn btn-sm btn-in-progress" onclick="document.getElementById('inProg{{ app.pk }}').showModal()">
+                                    В работу
+                                </button>
 
-                                    <!-- Кнопка 2: Выполнить -->
-                                    <button type="button" class="btn btn-outline-success btn-sm py-0 px-2" data-bs-toggle="modal" data-bs-target="#comp{{ app.pk }}">
-                                        Выполнить
-                                    </button>
+                                <!-- Кнопка 2: Выполнить -->
+                                <button type="button" class="btn btn-success btn-sm" onclick="document.getElementById('comp{{ app.pk }}').showModal()">
+                                    Выполнить
+                                </button>
 
-                                    <!-- Модалка: Смена на «Принято в работу» (комментарий обязателен) -->
-                                    <div class="modal fade text-start" id="inProg{{ app.pk }}" tabindex="-1">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <div class="modal-header py-2">
-                                                    <h6 class="modal-title fw-bold">Принять заявку #{{ app.pk }} в работу</h6>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                </div>
-                                                <form method="post" action="{% url 'admin-status-in-progress' app.pk %}">
-                                                    {% csrf_token %}
-                                                    <div class="modal-body">
-                                                        <label class="form-label small fw-semibold">Укажите комментарий <span class="text-danger">*</span></label>
-                                                        <textarea name="comment" class="form-control form-control-sm" rows="3" required placeholder="Например: Взято в работу дизайнером..."></textarea>
-                                                    </div>
-                                                    <div class="modal-footer py-2">
-                                                        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Отмена</button>
-                                                        <button type="submit" class="btn btn-sm btn-info text-white">Сохранить статус «В работу»</button>
-                                                    </div>
-                                                </form>
-                                            </div>
+                                <!-- Диалог: Смена на «Принято в работу» (комментарий обязателен) -->
+                                <dialog id="inProg{{ app.pk }}">
+                                    <div class="dialog-title">Принять заявку #{{ app.pk }} в работу</div>
+                                    <form method="post" action="{% url 'admin-status-in-progress' app.pk %}">
+                                        {% csrf_token %}
+                                        <div class="form-group text-start">
+                                            <label>Укажите комментарий <span class="text-danger">*</span></label>
+                                            <textarea name="comment" rows="3" required placeholder="Например: Взято в работу дизайнером..."></textarea>
+                                            <div class="field-help">Комментарий обязателен по условиям ТЗ</div>
                                         </div>
-                                    </div>
-
-                                    <!-- Модалка: Смена на «Выполнено» (дизайн обязателен) -->
-                                    <div class="modal fade text-start" id="comp{{ app.pk }}" tabindex="-1">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <div class="modal-header py-2">
-                                                    <h6 class="modal-title fw-bold">Завершить заявку #{{ app.pk }}</h6>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                </div>
-                                                <form method="post" action="{% url 'admin-status-completed' app.pk %}" enctype="multipart/form-data">
-                                                    {% csrf_token %}
-                                                    <div class="modal-body">
-                                                        <label class="form-label small fw-semibold">Прикрепите изображение дизайна <span class="text-danger">*</span></label>
-                                                        <input type="file" name="design_image" class="form-control form-control-sm" accept=".jpg,.jpeg,.png,.bmp" required>
-                                                        <small class="text-muted d-block mt-1">Форматы: jpg, jpeg, png, bmp</small>
-                                                    </div>
-                                                    <div class="modal-footer py-2">
-                                                        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Отмена</button>
-                                                        <button type="submit" class="btn btn-sm btn-success">Сохранить статус «Выполнено»</button>
-                                                    </div>
-                                                </form>
-                                            </div>
+                                        <div class="dialog-actions">
+                                            <button type="button" class="btn btn-sm" onclick="this.closest('dialog').close()">Отмена</button>
+                                            <button type="submit" class="btn btn-primary btn-sm">Перевести «В работу»</button>
                                         </div>
-                                    </div>
-                                {% else %}
-                                    <span class="text-muted small">Смена статуса невозможна</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="8" class="text-center py-3 text-muted">Заявок не найдено.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                                    </form>
+                                </dialog>
+
+                                <!-- Диалог: Смена на «Выполнено» (дизайн обязателен) -->
+                                <dialog id="comp{{ app.pk }}">
+                                    <div class="dialog-title text-success">Завершить заявку #{{ app.pk }}</div>
+                                    <form method="post" action="{% url 'admin-status-completed' app.pk %}" enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        <div class="form-group text-start">
+                                            <label>Прикрепите изображение дизайна <span class="text-danger">*</span></label>
+                                            <input type="file" name="design_image" accept=".jpg,.jpeg,.png,.bmp" required>
+                                            <div class="field-help">Форматы: jpg, jpeg, png, bmp (до 5 Мб)</div>
+                                        </div>
+                                        <div class="dialog-actions">
+                                            <button type="button" class="btn btn-sm" onclick="this.closest('dialog').close()">Отмена</button>
+                                            <button type="submit" class="btn btn-success btn-sm">Сохранить «Выполнено»</button>
+                                        </div>
+                                    </form>
+                                </dialog>
+                            {% else %}
+                                <span class="text-muted small">Смена невозможна</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            Заявок не найдено.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
 </div>
 {% endblock %}
-
 ```
 
 ---
@@ -2097,36 +2661,30 @@ urlpatterns += [
 {% block title %}Удаление категории — Design.pro{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card border-0 shadow rounded-4 p-4 p-md-5 bg-white text-center">
-                <div class="d-inline-flex p-3 rounded-circle bg-danger bg-opacity-10 text-danger mb-3 mx-auto">
-                    <i class="bi bi-exclamation-triangle-fill fs-1"></i>
-                </div>
-                <h3 class="fw-bold mb-2">Удаление категории</h3>
-                <p class="text-secondary mb-3">
-                    Вы уверены, что хотите удалить категорию <strong>«{{ category.name }}»</strong>?
-                </p>
-
-                <div class="alert alert-danger text-start small mb-4">
-                    <strong>Внимание!</strong> При удалении категории будут безвозвратно удалены все связанные заявки ({{ category.applications.count }} шт.).
-                </div>
-
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="d-flex justify-content-center gap-3">
-                        <a href="{% url 'admin_panel' %}" class="btn btn-outline-secondary px-4">
-                            Отмена
-                        </a>
-                        <button type="submit" class="btn btn-danger px-4 fw-semibold">
-                            <i class="bi bi-trash3-fill me-1"></i> Подтвердить удаление
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+<div class="form-box confirm-box">
+    <div class="confirm-icon">
+        !
     </div>
+    <h2 class="form-title">Удаление категории</h2>
+    <p class="dialog-message">
+        Вы действительно хотите удалить категорию <br><strong>«{{ category.name }}»</strong>?
+    </p>
+
+    <div class="alert alert-danger">
+        <strong>ВНИМАНИЕ ПО ТЗ!</strong> При удалении категории будут безвозвратно удалены все связанные заявки ({{ category.applications.count }} шт.).
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="confirm-actions">
+            <a href="{% url 'admin_panel' %}" class="btn">
+                Отмена
+            </a>
+            <button type="submit" class="btn btn-danger">
+                Подтвердить удаление
+            </button>
+        </div>
+    </form>
 </div>
 {% endblock %}
 ```
@@ -2568,20 +3126,60 @@ class DesignStudioTests(TestCase):
 25. **Вопрос:** Как запустить сервер на требуемом порту 8089?  
     **Ответ:** Командой `python manage.py runserver 8089`.
 
+26. **Вопрос:** Почему в проекте был выполнен полный отказ от Bootstrap в пользу чистого CSS?  
+    **Ответ:** 
+    1) **Автономность и надежность:** На демонстрационном экзамене рабочие станции часто изолированы от внешнего интернета, из-за чего CDN-ресурсы Bootstrap не загружаются и верстка «рассыпается». Чистый локальный CSS гарантирует 100% работоспособность офлайн.
+    2) **Скорость и размер:** Исключение Bootstrap сэкономило сотни килобайт ненужного CSS/JS кода, обеспечив мгновенный рендеринг страницы.
+    3) **Чистота кода и соответствие регламенту:** Строгий бруталистский минимализм демонстрирует комиссии глубокое владение базовыми стандартами веба (Flexbox, CSS Grid, CSS Variables) без использования готовых шаблонных компонентов.
+
+27. **Вопрос:** Как работают модальные окна (удаление заявки, смена статуса) без использования JavaScript-библиотеки Bootstrap?  
+    **Ответ:** Использован нативный стандартный тег HTML5 `<dialog>`. Он поддерживается всеми современными браузерами и предоставляет встроенные методы API: `dialog.showModal()` для открытия с автоматической модальной блокировкой фона (`::backdrop`) и `dialog.close()` для закрытия. Это устранило необходимость в подключении скриптов Bootstrap или jQuery.
+
+28. **Вопрос:** Как архитектурно структурирован файл стилей `style.css`?  
+    **Ответ:** Файл логически разбит на 11 модулей с оглавлением:
+    1) Дизайн-токены и переменные `:root` (шрифты, цвета, рамки);
+    2) Сброс стилей (Reset) с принудительным `border-radius: 0` и `box-shadow: none`;
+    3) Шапка и адаптивная навигация;
+    4) Система кнопок и фильтрации с эффектом инверсии;
+    5) Flash-сообщения (Alerts);
+    6) Промо-блок и сетка карточек проектов;
+    7) Таблицы данных и статусные бейджи;
+    8) Поля форм и серверная подсветка невалидных полей (`.is-invalid`);
+    9) Стилизация нативных диалогов `<dialog>`;
+    10) Фиксированный подвал (Sticky Footer на Flexbox);
+    11) Вспомогательные утилитные классы.
+
+26. **Вопрос:** Почему в проекте был выполнен полный отказ от Bootstrap в пользу чистого CSS?  
+    **Ответ:** 
+    1) **Автономность и надежность:** На демонстрационном экзамене рабочие станции часто изолированы от внешнего интернета, из-за чего CDN-ресурсы Bootstrap не загружаются и верстка «рассыпается». Чистый локальный CSS гарантирует 100% работоспособность офлайн.
+    2) **Скорость и размер:** Исключение Bootstrap сэкономило сотни килобайт ненужного CSS/JS кода, обеспечив мгновенный рендеринг страницы.
+    3) **Чистота кода и соответствие регламенту:** Строгий бруталистский минимализм демонстрирует комиссии глубокое владение базовыми стандартами веба (Flexbox, CSS Grid, CSS Variables) без использования готовых шаблонных компонентов.
+
+27. **Вопрос:** Как работают модальные окна (удаление заявки, смена статуса) без использования JavaScript-библиотеки Bootstrap?  
+    **Ответ:** Использован нативный стандартный тег HTML5 `<dialog>`. Он поддерживается всеми современными браузерами и предоставляет встроенные методы API: `dialog.showModal()` для открытия с автоматической модальной блокировкой фона (`::backdrop`) и `dialog.close()` для закрытия. Это устранило необходимость в подключении скриптов Bootstrap или jQuery.
+
+28. **Вопрос:** Как устроен файл стилей `style.css` и как в нем обеспечивается независимость от Bootstrap?  
+    **Ответ:** Файл написан на чистом CSS без внешних библиотек и разбит на понятные секции: сброс базовых отступов, стили шапки и меню, кнопки основных действий, промо-блок со счетчиком, карточки проектов, оформление таблиц с бейджами статусов, карточки форм с красной подсветкой невалидных полей (`.is-invalid`), модальные окна на теге `dialog` и подвал. Использованы стандартные свойства без избыточных фреймворков.
+
 
 ---
 
 ---
 
-## 4.5. Инженерные приемы оптимизации интерфейса
-### 10.6. Инженерные приемы облегчения интерфейса
+## 4.5. Инженерные приемы оптимизации интерфейса: отказ от Bootstrap и чистый бруталистский CSS
+### 10.6. Инженерные приемы максимального облегчения интерфейса
 
-Чтобы сделать интерфейс легким, быстрым и удобным для защиты перед комиссией:
-1. **Исключение тяжелых фреймворков:** Мы не подключали React, Vue или громоздкие сборщики Webpack/Vite. Использован чистый легковесный CDN Bootstrap 5 (CSS + JS).
-2. **Семантическая верстка:** Таблицы стилизованы классами `table-hover` и `align-middle`, обеспечивая идеальное выравнивание текста и миниатюр изображений по вертикали.
-3. **Модальные окна на чистом Bootstrap:** Все диалоги подтверждения удаления и формы смены статусов работают на стандартных data-атрибутах Bootstrap (`data-bs-toggle="modal"`), не требуя ни строчки кастомного JavaScript.
-4. **Легкие стили ([style.css](file:///C:/Users/fer/PycharmProjects/YP_Django_3/design_studio/static/css/style.css)):**  
-   Файл кастомных стилей сокращен до системного шрифтового стека `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto`, свойства `object-fit: cover` для картинок и базовых правил отображения ошибок, что гарантирует мгновенную загрузку страниц.
+Чтобы сделать интерфейс максимально быстрым, надежным, независимым от сети и идеальным для демонстрационного экзамена:
+1. **100% отказ от сторонних фреймворков и внешних CDN:**  
+   В проекте полностью исключены Bootstrap CSS, Bootstrap Icons и Bootstrap JS Bundle. Сайт не обращается к внешним серверам и мгновенно функционирует в локальных изолированных сетях без доступа в интернет (offline demo-exam mode).
+2. **Чистый, понятный CSS ([style.css](file:///C:/Users/fer/PycharmProjects/YP_Django_3/design_studio/static/css/style.css)):**  
+   Стили написаны вручную на чистом CSS без Bootstrap и сложных абстракций. Интерфейс аккуратный, минималистичный, блоки четко выровнены через Flexbox и Grid, таблицы и формы легко читаются, а невалидные поля подсвечиваются стандартным классом `.is-invalid`.
+3. **Модальные окна на нативном HTML5 `<dialog>`:**  
+   Диалоги подтверждения удаления и формы смены статусов заявок переведены на стандартный тег `<dialog>` с методами `.showModal()` и `.close()`. Это устраняет необходимость в 150+ Кб сторонних JavaScript-библиотек.
+4. **Информационный промо-блок и динамический счетчик:**  
+   На главной странице размещен контрастный блок счетчика с уникальным ID `#in-progress-counter`, отображающий точное число заявок в статусе «Принято в работу» напрямую из ORM.
+5. **Семантическая серверная подсветка валидации:**  
+   При наличии ошибок валидации формы Django поля получают класс `.is-invalid` с контрастной красной обводкой (`#cc0000`), а точный текст ошибки отображается в блоке `.field-error` непосредственно под полем.
 
 ---
 

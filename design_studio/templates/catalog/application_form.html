@@ -3,65 +3,63 @@
 {% block title %}Создание заявки — Design.pro{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 650px;">
-    <div class="card border p-4 bg-white">
-        <div class="mb-3">
-            <a href="{% url 'cabinet' %}" class="btn btn-outline-secondary btn-sm mb-2">&larr; Назад к моим заявкам</a>
-            <h3 class="h4 fw-bold mb-1">Новая заявка на дизайн</h3>
-            <p class="text-muted small mb-0">Все поля обязательны для заполнения</p>
+<div class="form-box">
+    <div class="form-header">
+        <a href="{% url 'cabinet' %}" class="btn btn-sm">&larr; Назад к моим заявкам</a>
+        <h2 class="form-title">Новая заявка на дизайн</h2>
+        <div class="field-help">Все поля обязательны для заполнения по ТЗ</div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for err in form.non_field_errors %}<div>{{ err }}</div>{% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Название заявки -->
+        <div class="form-group">
+            <label>Название заявки <span class="text-danger">*</span></label>
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div class="field-error">{% for e in form.title.errors %}{{ e }}{% endfor %}</div>
+            {% endif %}
         </div>
 
-        <form method="post" enctype="multipart/form-data" novalidate>
-            {% csrf_token %}
-
-            {% if form.non_field_errors %}
-                <div class="alert alert-danger py-2 small">
-                    {% for err in form.non_field_errors %}{{ err }}{% endfor %}
-                </div>
+        <!-- Категория заявки -->
+        <div class="form-group">
+            <label>Категория помещения <span class="text-danger">*</span></label>
+            {{ form.category }}
+            {% if form.category.errors %}
+                <div class="field-error">{% for e in form.category.errors %}{{ e }}{% endfor %}</div>
             {% endif %}
+        </div>
 
-            <!-- Название заявки -->
-            <div class="mb-3">
-                <label class="form-label small fw-semibold">Название заявки <span class="text-danger">*</span></label>
-                {{ form.title }}
-                {% if form.title.errors %}
-                    <div class="text-danger small mt-1">{% for e in form.title.errors %}{{ e }}{% endfor %}</div>
-                {% endif %}
-            </div>
+        <!-- Описание заявки -->
+        <div class="form-group">
+            <label>Описание пожеланий к дизайну <span class="text-danger">*</span></label>
+            {{ form.description }}
+            {% if form.description.errors %}
+                <div class="field-error">{% for e in form.description.errors %}{{ e }}{% endfor %}</div>
+            {% endif %}
+        </div>
 
-            <!-- Категория заявки -->
-            <div class="mb-3">
-                <label class="form-label small fw-semibold">Категория <span class="text-danger">*</span></label>
-                {{ form.category }}
-                {% if form.category.errors %}
-                    <div class="text-danger small mt-1">{% for e in form.category.errors %}{{ e }}{% endfor %}</div>
-                {% endif %}
-            </div>
+        <!-- Фото помещения или его план -->
+        <div class="form-group">
+            <label>Фото помещения или план <span class="text-danger">*</span></label>
+            {{ form.photo }}
+            <div class="field-help">Разрешенные форматы: <strong>jpg, jpeg, png, bmp</strong>. Максимальный размер: <strong>до 2 Мб</strong>.</div>
+            {% if form.photo.errors %}
+                <div class="field-error">{% for e in form.photo.errors %}{{ e }}{% endfor %}</div>
+            {% endif %}
+        </div>
 
-            <!-- Описание заявки -->
-            <div class="mb-3">
-                <label class="form-label small fw-semibold">Описание помещения <span class="text-danger">*</span></label>
-                {{ form.description }}
-                {% if form.description.errors %}
-                    <div class="text-danger small mt-1">{% for e in form.description.errors %}{{ e }}{% endfor %}</div>
-                {% endif %}
-            </div>
-
-            <!-- Фото помещения или его план -->
-            <div class="mb-4">
-                <label class="form-label small fw-semibold">Фото помещения или план <span class="text-danger">*</span></label>
-                {{ form.photo }}
-                <div class="text-muted small mt-1">Разрешенные форматы: <strong>jpg, jpeg, png, bmp</strong>. Максимальный размер: <strong>до 2 Мб</strong>.</div>
-                {% if form.photo.errors %}
-                    <div class="text-danger small mt-1">{% for e in form.photo.errors %}{{ e }}{% endfor %}</div>
-                {% endif %}
-            </div>
-
-            <div class="d-flex justify-content-end gap-2">
-                <a href="{% url 'cabinet' %}" class="btn btn-light btn-sm">Отмена</a>
-                <button type="submit" class="btn btn-primary btn-sm px-4">Отправить заявку</button>
-            </div>
-        </form>
-    </div>
+        <div class="form-actions">
+            <a href="{% url 'cabinet' %}" class="btn">Отмена</a>
+            <button type="submit" class="btn btn-primary">Отправить заявку</button>
+        </div>
+    </form>
 </div>
 {% endblock %}
