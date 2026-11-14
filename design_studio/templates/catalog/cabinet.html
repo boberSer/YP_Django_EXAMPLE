@@ -4,16 +4,13 @@
 
 {% block content %}
 <div class="box">
-    <!-- Верхний блок: заголовок и действие -->
+    <!-- Верхний блок: заголовок -->
     <div class="box-header">
         <div>
             <h2 class="box-title">Мои заявки на дизайн</h2>
             <div class="box-subtitle">
                 Пользователь: <b>{{ user.fio|default:user.username }}</b>
             </div>
-        </div>
-        <div>
-            <a href="{% url 'application-create' %}" class="btn btn-primary btn-sm">+ Новая заявка</a>
         </div>
     </div>
 
@@ -148,7 +145,7 @@
     {% else %}
         <div class="empty-state">
             <p class="empty-state-text">Заявок с выбранным фильтром не найдено.</p>
-            <a href="{% url 'application-create' %}" class="btn btn-sm btn-primary">+ Создать первую заявку</a>
+            <a href="{% url 'application-create' %}" class="btn btn-sm btn-primary">Создать первую заявку</a>
         </div>
     {% endif %}
 

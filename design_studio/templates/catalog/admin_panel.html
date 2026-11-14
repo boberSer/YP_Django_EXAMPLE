@@ -9,7 +9,7 @@
         <div class="admin-subtitle">Управление категориями и смена статусов заявок клиентов</div>
     </div>
     <div>
-        <a href="/superadmin/" target="_blank" class="btn btn-sm">Django Superadmin &rarr;</a>
+        <a href="/superadmin/" target="_blank" class="btn btn-sm">Django Superadmin</a>
     </div>
 </div>
 
@@ -25,7 +25,7 @@
             <form method="post" action="{% url 'admin-add-category' %}" class="cat-add-form">
                 {% csrf_token %}
                 <input type="text" name="name" placeholder="Название новой категории" required class="cat-add-input">
-                <button type="submit" class="btn btn-primary btn-sm">+ Добавить</button>
+                <button type="submit" class="btn btn-primary btn-sm">Добавить</button>
             </form>
             <div class="field-help">Название категории должно быть уникальным</div>
         </div>
@@ -37,7 +37,7 @@
                 {% for cat in categories %}
                     <div class="cat-tag">
                         <span><strong>{{ cat.name }}</strong> ({{ cat.applications.count }})</span>
-                        <button type="button" class="btn btn-danger btn-sm cat-del-btn" onclick="document.getElementById('delCat{{ cat.pk }}').showModal()" title="Удалить категорию">&times;</button>
+                        <button type="button" class="btn btn-danger btn-sm cat-del-btn" onclick="document.getElementById('delCat{{ cat.pk }}').showModal()">Удалить</button>
                     </div>
 
                     <!-- Диалог удаления категории с предупреждением о каскадном удалении -->

@@ -571,7 +571,7 @@ Django использует двухуровневое наследование 
 - **Адаптивное меню навигации:**
   Контейнер `.site-header` и `.header-inner` используют Flexbox-раскладку без JavaScript:
   - Гость видит: логотип `DESIGN.PRO`, ссылку «Главная», кнопки `[ Вход ]` и `[ Регистрация ]`.
-  - Авторизованный клиент видит: пункты «Мои заявки», «+ Создать заявку», блок профиля с логином/ФИО и кнопку `[ Выход ]`.
+  - Авторизованный клиент видит: пункты «Мои заявки», «Создать заявку», блок профиля с логином/ФИО и кнопку `[ Выход ]`.
   - Администратор дополнительно видит: акцентную ссылку «Панель управления» и прямую ссылку в админку Django (`/superadmin/`).
 - **Вывод Flash-сообщений (`messages`):**  
   Контейнер `.messages-container` отображает уведомления фреймворка `django.contrib.messages` (`alert-success`, `alert-danger`, `alert-info`) с нативной кнопкой закрытия `[X]`, удаляющей блок через `this.parentElement.remove()` без библиотек.
@@ -591,67 +591,69 @@ Django использует двухуровневое наследование 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Design.pro — Студия дизайна интерьеров{% endblock %}</title>
     <!-- Чистый CSS без Bootstrap -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
 
-    <!-- Шапка и главное меню -->
-    <header class="site-header">
-        <div class="container header-inner">
-            <a class="site-logo" href="{% url 'index' %}">
-                Design<span>.pro</span>
-            </a>
+<!-- Шапка и главное меню -->
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="site-logo" href="{% url 'index' %}">Design.pro</a>
 
-            <nav class="main-nav">
-                <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">Главная</a>
-                {% if user.is_authenticated %}
-                    <a class="nav-link {% if request.resolver_match.url_name == 'cabinet' %}active{% endif %}" href="{% url 'cabinet' %}">Мои заявки</a>
-                    <a class="nav-link {% if request.resolver_match.url_name == 'application-create' %}active{% endif %}" href="{% url 'application-create' %}">+ Создать заявку</a>
-                    {% if user.is_staff or user.is_superuser %}
-                        <a class="nav-link admin-link {% if request.resolver_match.url_name == 'admin_panel' %}active{% endif %}" href="{% url 'admin_panel' %}">Панель управления</a>
-                        <a class="nav-link superadmin-link" href="/superadmin/" target="_blank">Superadmin</a>
-                    {% endif %}
+        <nav class="main-nav">
+            <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}"
+               href="{% url 'index' %}">Главная</a>
+            {% if user.is_authenticated %}
+                <a class="nav-link {% if request.resolver_match.url_name == 'cabinet' %}active{% endif %}"
+                   href="{% url 'cabinet' %}">Мои заявки</a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'application-create' %}active{% endif %}"
+                   href="{% url 'application-create' %}">Создать заявку</a>
+                {% if user.is_staff or user.is_superuser %}
+                    <a class="nav-link admin-link {% if request.resolver_match.url_name == 'admin_panel' %}active{% endif %}"
+                       href="{% url 'admin_panel' %}">Панель управления</a>
+                    <a class="nav-link superadmin-link" href="/superadmin/" target="_blank">Superadmin</a>
                 {% endif %}
-            </nav>
+            {% endif %}
+        </nav>
 
-            <div class="user-block">
-                {% if user.is_authenticated %}
-                    <span class="user-info">
+        <div class="user-block">
+            {% if user.is_authenticated %}
+                <span class="user-info">
                         {{ user.username }}{% if user.fio %} ({{ user.fio }}){% endif %}
                     </span>
-                    <a href="{% url 'logout' %}" class="btn btn-sm btn-danger">Выход</a>
-                {% else %}
-                    <a href="{% url 'login' %}" class="btn btn-sm">Вход</a>
-                    <a href="{% url 'register' %}" class="btn btn-sm btn-primary">Регистрация</a>
-                {% endif %}
-            </div>
+                <a href="{% url 'logout' %}" class="btn btn-sm btn-danger">Выход</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn-sm">Вход</a>
+                <a href="{% url 'register' %}" class="btn btn-sm">Регистрация</a>
+            {% endif %}
         </div>
-    </header>
-
-    <!-- Сообщения системы -->
-    <div class="container messages-container">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">
-                    <span>{{ message }}</span>
-                    <button type="button" class="alert-close" onclick="this.parentElement.remove()" title="Закрыть">&times;</button>
-                </div>
-            {% endfor %}
-        {% endif %}
     </div>
+</header>
 
-    <!-- Основной контент страницы -->
-    <main class="container main-content">
-        {% block content %}{% endblock %}
-    </main>
+<!-- Сообщения системы -->
+<div class="container messages-container">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">
+                <span>{{ message }}</span>
+                <button type="button" class="alert-close" onclick="this.parentElement.remove()" title="Закрыть">Закрыть</button>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
 
-    <!-- Подвал сайта -->
-    <footer class="site-footer">
-        <div class="container footer-inner">
-            <span>© 2026 Студия дизайна интерьеров <strong>Design.pro</strong></span>
-            <span>Порт: <strong>8089</strong> | Админка Django: <a href="/superadmin" target="_blank">/superadmin</a></span>
-        </div>
-    </footer>
+<!-- Основной контент страницы -->
+<main class="container main-content">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Подвал сайта -->
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <span>© 2026 Студия дизайна интерьеров <strong>Design.pro</strong></span>
+        <span>Порт: <strong>8089</strong> | Админка Django: <a href="/superadmin" target="_blank">/superadmin</a></span>
+    </div>
+</footer>
 
 </body>
 </html>
@@ -678,10 +680,11 @@ Django использует двухуровневое наследование 
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    border-radius: 0 !important;
 }
 
 body {
-    font-family: Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: Arial, sans-serif;
     background-color: #f4f6f9;
     color: #212529;
     line-height: 1.5;
@@ -700,11 +703,21 @@ a:hover {
     text-decoration: underline;
 }
 
+img {
+    max-width: 100%;
+    height: auto;
+}
+
 .container {
     width: 100%;
     max-width: 1100px;
     margin: 0 auto;
     padding: 0 15px;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding-bottom: 30px;
 }
 
 /* Шапка сайта и меню */
@@ -724,18 +737,15 @@ a:hover {
 }
 
 .site-logo {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
     color: #212529;
     text-decoration: none;
 }
 
-.site-logo span {
-    color: #0d6efd;
-}
-
 .site-logo:hover {
     text-decoration: none;
+    color: #212529;
 }
 
 .main-nav {
@@ -746,11 +756,12 @@ a:hover {
 }
 
 .nav-link {
-    color: #495057;
+    color: #212529;
     padding: 6px 12px;
-    border-radius: 4px;
-    font-weight: 500;
+    font-size: 13px;
     text-decoration: none;
+    border: 1px solid #ced4da;
+    background-color: #ffffff;
 }
 
 .nav-link:hover {
@@ -760,17 +771,16 @@ a:hover {
 }
 
 .nav-link.active {
-    background-color: #0d6efd;
-    color: #ffffff;
+    background-color: #e9ecef;
+    color: #212529;
+    font-weight: bold;
 }
 
-.nav-link.admin-link {
-    color: #856404;
-    background-color: #fff3cd;
-}
-
-.nav-link.admin-link:hover {
-    background-color: #ffe69c;
+.nav-link.admin-link,
+.superadmin-link {
+    color: #212529;
+    border: 1px solid #ced4da;
+    background-color: #ffffff;
 }
 
 .user-block {
@@ -781,10 +791,10 @@ a:hover {
 
 .user-info {
     font-size: 13px;
-    color: #6c757d;
+    color: #495057;
     background: #e9ecef;
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 6px 10px;
+    border: 1px solid #ced4da;
 }
 
 /* Кнопки */
@@ -799,7 +809,6 @@ input[type="button"] {
     border: 1px solid #ced4da;
     background: #ffffff;
     color: #212529;
-    border-radius: 4px;
     cursor: pointer;
     text-decoration: none;
     vertical-align: middle;
@@ -815,37 +824,37 @@ input[type="submit"]:hover {
 .btn-primary {
     background: #0d6efd;
     border-color: #0d6efd;
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .btn-primary:hover {
     background: #0b5ed7;
     border-color: #0a58ca;
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .btn-danger {
     background: #dc3545;
     border-color: #dc3545;
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .btn-danger:hover {
     background: #bb2d3b;
     border-color: #b02a37;
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .btn-success {
     background: #198754;
     border-color: #198754;
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .btn-success:hover {
     background: #157347;
     border-color: #146c43;
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .btn-sm {
@@ -853,11 +862,25 @@ input[type="submit"]:hover {
     font-size: 12px;
 }
 
+.btn-in-progress {
+    color: #055160;
+    border-color: #b6effb;
+    background-color: #cff4fc;
+}
+
+.btn-in-progress:hover {
+    background-color: #b6effb;
+}
+
+.btn-full {
+    width: 100%;
+    padding: 10px;
+}
+
 /* Блоки и карточки */
 .box {
     background: #ffffff;
     border: 1px solid #dee2e6;
-    border-radius: 6px;
     padding: 20px;
     margin-bottom: 25px;
 }
@@ -869,20 +892,24 @@ input[type="submit"]:hover {
     flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #dee2e6;
 }
 
 .box-title {
     font-size: 18px;
     font-weight: bold;
+    margin-bottom: 15px;
 }
 
-/* Промо блок главной страницы */
+.box-subtitle {
+    font-size: 13px;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+/* Промо-блок главной страницы */
 .hero-box {
     background: #ffffff;
     border: 1px solid #dee2e6;
-    border-radius: 6px;
     padding: 25px;
     margin-bottom: 25px;
     display: flex;
@@ -892,7 +919,7 @@ input[type="submit"]:hover {
     flex-wrap: wrap;
 }
 
-.hero-box > div:first-child {
+.hero-content {
     flex: 1 1 500px;
 }
 
@@ -908,11 +935,16 @@ input[type="submit"]:hover {
     font-size: 14px;
 }
 
+.hero-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 /* Счетчик заявок в работе */
 .counter-box {
     background: #f8f9fa;
     border: 1px solid #dee2e6;
-    border-radius: 6px;
     padding: 20px;
     text-align: center;
     min-width: 240px;
@@ -939,7 +971,7 @@ input[type="submit"]:hover {
     color: #6c757d;
 }
 
-/* Сетка проектов */
+/* Сетка карточек проектов */
 .cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -950,7 +982,6 @@ input[type="submit"]:hover {
 .project-card {
     background: #ffffff;
     border: 1px solid #dee2e6;
-    border-radius: 6px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -986,6 +1017,9 @@ input[type="submit"]:hover {
     font-size: 15px;
     font-weight: bold;
     margin: 6px 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .project-desc {
@@ -1003,6 +1037,20 @@ input[type="submit"]:hover {
 }
 
 /* Фильтры */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.filter-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+}
+
 .filter-group {
     display: flex;
     gap: 5px;
@@ -1012,7 +1060,6 @@ input[type="submit"]:hover {
 .filter-btn {
     padding: 5px 10px;
     font-size: 12px;
-    border-radius: 4px;
     background: #e9ecef;
     color: #495057;
     text-decoration: none;
@@ -1034,7 +1081,6 @@ input[type="submit"]:hover {
     width: 100%;
     overflow-x: auto;
     border: 1px solid #dee2e6;
-    border-radius: 6px;
     background: #ffffff;
     margin: 15px 0;
 }
@@ -1062,11 +1108,100 @@ tr:hover td {
     background: #f8f9fa;
 }
 
+.col-date {
+    width: 120px;
+}
+
+.col-category {
+    width: 130px;
+}
+
+.col-thumb {
+    width: 70px;
+}
+
+.col-status {
+    width: 140px;
+}
+
+.col-action {
+    text-align: right;
+    width: 120px;
+}
+
+.col-date-text {
+    white-space: nowrap;
+    color: #6c757d;
+    font-size: 12px;
+}
+
+.col-action-cell {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.app-title {
+    font-weight: 600;
+    color: #212529;
+}
+
+.app-desc {
+    color: #495057;
+    font-size: 12px;
+    margin-top: 3px;
+    max-width: 260px;
+}
+
+.app-thumb {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border: 1px solid #dee2e6;
+    display: block;
+}
+
+.table-thumb-cell {
+    display: flex;
+    gap: 4px;
+}
+
+.plan-thumb {
+    width: 38px;
+    height: 38px;
+    object-fit: cover;
+    border: 1px solid #dee2e6;
+    display: block;
+}
+
+.design-thumb {
+    width: 38px;
+    height: 38px;
+    object-fit: cover;
+    border: 2px solid #198754;
+    display: block;
+}
+
+.comment-text {
+    font-size: 12px;
+    color: #055160;
+}
+
+.completed-reply {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.comment-note {
+    font-size: 11px;
+    color: #495057;
+}
+
 /* Бейджи */
 .badge {
     display: inline-block;
     padding: 3px 8px;
-    border-radius: 4px;
     font-size: 11px;
     font-weight: 600;
 }
@@ -1101,8 +1236,33 @@ tr:hover td {
     margin: 30px auto;
     background: #ffffff;
     border: 1px solid #dee2e6;
-    border-radius: 6px;
     padding: 25px;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.form-back-link {
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.form-back-link a {
+    color: #0d6efd;
+    font-size: 13px;
+    text-decoration: underline;
+}
+
+.form-back-link a:hover {
+    color: #0a58ca;
+}
+
+.form-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 4px;
 }
 
 .form-group {
@@ -1128,7 +1288,6 @@ select,
     width: 100%;
     padding: 8px 10px;
     border: 1px solid #ced4da;
-    border-radius: 4px;
     font-size: 13px;
     font-family: inherit;
     background: #ffffff;
@@ -1181,6 +1340,106 @@ select:focus {
     font-size: 13px;
 }
 
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.form-submit {
+    margin-top: 20px;
+}
+
+.credentials-hint {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    font-size: 12px;
+    color: #495057;
+}
+
+.form-footer-link {
+    text-align: center;
+    font-size: 13px;
+    border-top: 1px solid #dee2e6;
+    padding-top: 15px;
+    margin-top: 20px;
+}
+
+/* Пустые состояния */
+.empty-state {
+    padding: 30px;
+    text-align: center;
+    color: #6c757d;
+    background: #f8f9fa;
+}
+
+.empty-state-text {
+    margin-bottom: 12px;
+}
+
+/* Админ панель */
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.admin-subtitle {
+    font-size: 13px;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+.cat-manage-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.cat-add-form {
+    display: flex;
+    gap: 8px;
+}
+
+.cat-add-input {
+    flex-grow: 1;
+}
+
+.cat-list-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 8px;
+}
+
+.cat-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.cat-tag {
+    background: #e9ecef;
+    border: 1px solid #dee2e6;
+    padding: 4px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.cat-del-btn {
+    padding: 2px 6px;
+    font-size: 11px;
+}
+
 /* Сообщения / Alerts */
 .messages-container {
     margin-bottom: 15px;
@@ -1188,7 +1447,6 @@ select:focus {
 
 .alert {
     padding: 10px 15px;
-    border-radius: 4px;
     margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
@@ -1225,22 +1483,20 @@ select:focus {
 .alert-close {
     background: none;
     border: none;
-    font-size: 18px;
-    line-height: 1;
+    font-size: 12px;
     cursor: pointer;
     color: inherit;
-    opacity: 0.7;
+    text-decoration: underline;
 }
 
 .alert-close:hover {
-    opacity: 1;
+    opacity: 0.8;
 }
 
 /* Диалоги (HTML5 dialog) */
 dialog {
     background: #ffffff;
     border: 1px solid #dee2e6;
-    border-radius: 8px;
     padding: 20px;
     max-width: 450px;
     width: 90%;
@@ -1259,6 +1515,11 @@ dialog::backdrop {
     border-bottom: 1px solid #dee2e6;
 }
 
+.dialog-message {
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
 .dialog-actions {
     display: flex;
     justify-content: flex-end;
@@ -1266,6 +1527,21 @@ dialog::backdrop {
     margin-top: 15px;
     padding-top: 10px;
     border-top: 1px solid #dee2e6;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.confirm-box {
+    text-align: center;
+    max-width: 480px;
+}
+
+.confirm-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
 }
 
 /* Подвал */
@@ -1287,13 +1563,33 @@ dialog::backdrop {
 }
 
 /* Вспомогательные классы */
-.text-danger { color: #dc3545 !important; }
-.text-success { color: #198754 !important; }
-.text-muted { color: #6c757d !important; }
-.text-center { text-align: center !important; }
-.text-end { text-align: right !important; }
-.fw-bold { font-weight: bold !important; }
-.small { font-size: 12px !important; }
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-success {
+    color: #198754 !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.text-center {
+    text-align: center !important;
+}
+
+.text-end {
+    text-align: right !important;
+}
+
+.fw-bold {
+    font-weight: bold !important;
+}
+
+.small {
+    font-size: 12px !important;
+}
 ```
 
 ---
@@ -1447,7 +1743,7 @@ urlpatterns = [
         </p>
         <div class="hero-actions">
             {% if user.is_authenticated %}
-                <a href="{% url 'application-create' %}" class="btn btn-primary">+ Создать заявку</a>
+                <a href="{% url 'application-create' %}" class="btn btn-primary">Создать заявку</a>
                 <a href="{% url 'cabinet' %}" class="btn">Мои заявки</a>
             {% else %}
                 <a href="{% url 'register' %}" class="btn btn-primary">Регистрация</a>
@@ -1466,10 +1762,7 @@ urlpatterns = [
 
 <!-- Раздел: Последние выполненные проекты (не более 4) -->
 <div class="box">
-    <div class="box-header">
-        <div class="box-title">Последние выполненные проекты</div>
-        <span class="badge badge-category">до 4 проектов</span>
-    </div>
+    <h2 class="box-title">Последние выполненные проекты</h2>
 
     {% if completed_apps %}
         <div class="cards-grid">
@@ -1977,16 +2270,13 @@ urlpatterns += [
 
 {% block content %}
 <div class="box">
-    <!-- Верхний блок: заголовок и действие -->
+    <!-- Верхний блок: заголовок -->
     <div class="box-header">
         <div>
             <h2 class="box-title">Мои заявки на дизайн</h2>
             <div class="box-subtitle">
                 Пользователь: <b>{{ user.fio|default:user.username }}</b>
             </div>
-        </div>
-        <div>
-            <a href="{% url 'application-create' %}" class="btn btn-primary btn-sm">+ Новая заявка</a>
         </div>
     </div>
 
@@ -2121,7 +2411,7 @@ urlpatterns += [
     {% else %}
         <div class="empty-state">
             <p class="empty-state-text">Заявок с выбранным фильтром не найдено.</p>
-            <a href="{% url 'application-create' %}" class="btn btn-sm btn-primary">+ Создать первую заявку</a>
+            <a href="{% url 'application-create' %}" class="btn btn-sm btn-primary">Создать первую заявку</a>
         </div>
     {% endif %}
 
@@ -2148,7 +2438,9 @@ urlpatterns += [
 {% block content %}
 <div class="form-box">
     <div class="form-header">
-        <a href="{% url 'cabinet' %}" class="btn btn-sm">&larr; Назад к моим заявкам</a>
+        <div class="form-back-link">
+            <a href="{% url 'cabinet' %}">Назад к моим заявкам</a>
+        </div>
         <h2 class="form-title">Новая заявка на дизайн</h2>
         <div class="field-help">Все поля обязательны для заполнения по ТЗ</div>
     </div>
@@ -2221,9 +2513,6 @@ urlpatterns += [
 
 {% block content %}
 <div class="form-box confirm-box">
-    <div class="confirm-icon">
-        &times;
-    </div>
     <h2 class="form-title">Удаление заявки</h2>
     <p class="dialog-message">
         Вы действительно хотите безвозвратно удалить заявку:
@@ -2458,7 +2747,7 @@ urlpatterns += [
         <div class="admin-subtitle">Управление категориями и смена статусов заявок клиентов</div>
     </div>
     <div>
-        <a href="/superadmin/" target="_blank" class="btn btn-sm">Django Superadmin &rarr;</a>
+        <a href="/superadmin/" target="_blank" class="btn btn-sm">Django Superadmin</a>
     </div>
 </div>
 
@@ -2474,7 +2763,7 @@ urlpatterns += [
             <form method="post" action="{% url 'admin-add-category' %}" class="cat-add-form">
                 {% csrf_token %}
                 <input type="text" name="name" placeholder="Название новой категории" required class="cat-add-input">
-                <button type="submit" class="btn btn-primary btn-sm">+ Добавить</button>
+                <button type="submit" class="btn btn-primary btn-sm">Добавить</button>
             </form>
             <div class="field-help">Название категории должно быть уникальным</div>
         </div>
@@ -2486,7 +2775,7 @@ urlpatterns += [
                 {% for cat in categories %}
                     <div class="cat-tag">
                         <span><strong>{{ cat.name }}</strong> ({{ cat.applications.count }})</span>
-                        <button type="button" class="btn btn-danger btn-sm cat-del-btn" onclick="document.getElementById('delCat{{ cat.pk }}').showModal()" title="Удалить категорию">&times;</button>
+                        <button type="button" class="btn btn-danger btn-sm cat-del-btn" onclick="document.getElementById('delCat{{ cat.pk }}').showModal()">Удалить</button>
                     </div>
 
                     <!-- Диалог удаления категории с предупреждением о каскадном удалении -->
@@ -2662,9 +2951,6 @@ urlpatterns += [
 
 {% block content %}
 <div class="form-box confirm-box">
-    <div class="confirm-icon">
-        !
-    </div>
     <h2 class="form-title">Удаление категории</h2>
     <p class="dialog-message">
         Вы действительно хотите удалить категорию <br><strong>«{{ category.name }}»</strong>?

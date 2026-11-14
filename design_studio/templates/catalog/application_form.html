@@ -5,7 +5,9 @@
 {% block content %}
 <div class="form-box">
     <div class="form-header">
-        <a href="{% url 'cabinet' %}" class="btn btn-sm">&larr; Назад к моим заявкам</a>
+        <div class="form-back-link">
+            <a href="{% url 'cabinet' %}">Назад к моим заявкам</a>
+        </div>
         <h2 class="form-title">Новая заявка на дизайн</h2>
         <div class="field-help">Все поля обязательны для заполнения по ТЗ</div>
     </div>
