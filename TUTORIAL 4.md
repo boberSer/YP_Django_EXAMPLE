@@ -12,7 +12,7 @@
 
 | Секция | Тема модуля | Содержание и ключевые задачи |
 | :--- | :--- | :--- |
-| [**Секция 0**](#секция-0-общесистемный-фундамент-архитектура-и-первоначальная-настройка-проекта) | **Общесистемный фундамент** | MVT vs MVC, HTTP-цикл, анализ ТЗ, окружение Python 3.12, детальный разбор и код `settings.py`, медиа-хранилище, базовый каркас `base.html` и стили |
+| [**Секция 0**](#секция-0-общесистемный-фундамент-архитектура-и-первоначальная-настройка-проекта) | **Общесистемный фундамент** | MVT vs MVC, HTTP-цикл, анализ ТЗ, окружение Python 3.12, детальный разбор и код `settings.py`, архитектура контроллеров и полный код `catalog/views.py`, медиа-хранилище, базовый каркас `base.html` и стили |
 | [**Секция 1**](#секция-1-практическая-работа-21-реализация-функционала-гостя) | **ПР №2.1. Функционал гостя** | 1. Главная страница (счетчик + 4 работы)<br>2. Регистрация (валидация ФИО, логина, ПДн, подсветка ошибок `is-invalid`)<br>3. Вход в систему (ролевой редирект)<br>📄 *Готовый отчет по ПР 2.1*<br>🎓 *Вопросы и ответы для защиты ПР 2.1* |
 | [**Секция 2**](#секция-2-практическая-работа-22-реализация-функционала-зарегистрированного-пользователя) | **ПР №2.2. Функционал пользователя** | 1. Выход из системы (Logout)<br>2. Создание заявки (валидация плана до 2 Мб)<br>3. Просмотр своих заявок (фильтры)<br>4. Безопасное удаление своей новой заявки<br>📄 *Готовый отчет по ПР 2.2*<br>🎓 *Вопросы и ответы для защиты ПР 2.2* |
 | [**Секция 3**](#секция-3-практическая-работа-23-реализация-функционала-администратора) | **ПР №2.3. Функционал администратора** | 1. Разграничение прав (`@user_passes_test(is_admin)`)<br>2. Смена статуса «В работу» (с комментарием)<br>3. Смена статуса «Выполнено» (с файлом дизайна до 5 Мб)<br>4. Управление категориями и каскадное удаление заявок (`CASCADE`)<br>📄 *Готовый отчет по ПР 2.3*<br>🎓 *Вопросы и ответы для защиты ПР 2.3* |
@@ -420,6 +420,433 @@ media/
 2. **Почему не использована разбивка по датам (`upload_to='photos/%Y/%m/'`):**  
    В операционных системах Linux на каждую папку выделяется структура индексных дескрипторов (`inodes`). Когда в одной папке накапливается свыше 50 000 файлов, поиск файла файловой системой замедляется. Поэтому высоконагруженные порталы (Авито, Ozon) дробят файлы по годам и месяцам.  
    В студенческом проекте или демонстрационном экзамене важнее всего **наглядность и простота проверки**. Структура `photos/` и `designs/` исключает блуждание по пустым папкам с годами и днями: преподаватель сразу видит входящие файлы в `photos/` и результаты в `designs/`.
+
+---
+
+## 6. Шаг 4. Представления (Views) и бизнес-логика (`catalog/views.py`) — полный архитектурный разбор
+
+Файл: [catalog/views.py](file:///C:/Users/fer/PycharmProjects/YP_Django_3/design_studio/catalog/views.py)
+
+Представления (Views) в Django — это «мозг» и главный диспетчер всего веб-приложения. В архитектуре MVT именно View принимает входящий HTTP-запрос от пользователя, применяет бизнес-логику, общается с базой данных через модели и решает, какую HTML-страницу или ответ вернуть браузеру.
+
+### 6.1. Теория представлений в Django простыми словами (без сложных терминов)
+
+Представьте веб-сайт как **ресторан**:
+- **Посетитель (Браузер)** делает заказ — это входящий сетевой пакет **`HttpRequest`**.
+- **Официант/Диспетчер (urls.py)** смотрит в меню и направляет заказ на нужную кухню.
+- **Шеф-повар (View в views.py)** — это и есть представление! Он берет заказ, идет в кладовую за продуктами (**Models / База данных**), готовит блюдо, красиво оформляет его на тарелке (**Template / HTML-шаблон**) и отдает официанту, чтобы тот унес его клиенту — это исходящий ответ **`HttpResponse`**.
+
+#### Главная формула любого View в Django:
+```python
+def my_view(request):
+    # 1. Приняли запрос (request)
+    # 2. Выполнили логику (достали данные из БД, проверили форму)
+    # 3. Вернули ответ (render или redirect)
+    return HttpResponse(...) # или render(request, 'page.html', context)
+```
+
+---
+
+### 6.2. Почему в проекте используются FBV (функции), а не CBV (классы)?
+
+В Django есть два подхода к написанию представлений:
+1. **FBV (Function-Based Views) — представления на функциях:**  
+   Каждое действие описывается как обычная Python-функция (`def my_view(request):`).
+2. **CBV (Class-Based Views) — представления на классах:**  
+   Действия описываются через наследование от стандартных классов Django (`ListView`, `CreateView`, `DeleteView`).
+
+> [!TIP]
+> **Почему FBV лучше для учебной практики и демонстрационного экзамена:**  
+> - **Прозрачность 100%:** В функции нет «скрытой магии» наследования и миксинов. Каждая строчка видна: где проверяется метод `POST`, где создается форма, где делается `save()`, куда идет редирект.  
+> - **Легкость объяснения преподавателю:** Студент может пальцем показать каждую строчку и объяснить её назначение за 30 секунд.  
+> - **Полный контроль над поведением:** Не нужно переопределять сложные методы `get_context_data()`, `form_valid()` или `get_queryset()`.
+
+---
+
+### 6.3. Фундаментальные концепции работы View, которые нужно знать
+
+#### 1. Разделение запросов `GET` и `POST`
+Любая веб-страница работает в двух основных режимах:
+- **`GET` (Получить / Посмотреть):**  
+  Пользователь просто открывает ссылку или вводит адрес в браузере. Данные из базы только читаются. Если на странице есть форма, при `GET` мы показываем её **пустой** для заполнения. Также в GET передаются параметры фильтрации в URL (например, `?status=new`).
+- **`POST` (Отправить / Изменить):**  
+  Пользователь нажал кнопку «Отправить», «Зарегистрироваться», «Удалить» или «Войти». Браузер отправляет пачку данных на сервер в теле запроса. При `POST` мы считываем данные, валидируем их и сохраняем в базу данных.
+
+#### 2. Разница между `render()` и `redirect()`: Паттерн PRG (Post/Redirect/Get)
+- **`render(request, 'template.html', context)`:**  
+  Берет HTML-шаблон, подставляет в него переменные из словаря `context` и отдает браузеру готовый HTML со статусом `200 OK`. Адрес в строке браузера при этом **НЕ меняется**.
+- **`redirect('route_name')`:**  
+  Возвращает браузеру короткий ответ `302 Found` с заголовком `Location: /cabinet/`. Браузер, получив этот ответ, сам делает **новый чистый GET-запрос** по новому адресу.
+
+> [!IMPORTANT]
+> **Почему после успешного POST ВСЕГДА делается `redirect()`, а не `render()`?**  
+> Это всемирный стандарт веб-разработки, называемый **PRG (Post/Redirect/Get)**.  
+> Если после создания заявки вернуть `render()`, и пользователь случайно нажмет кнопку «Обновить страницу» (F5) в браузере, браузер покажет пугающее окно: *«Повторно отправить форму?»*. При нажатии «Да» в базе создастся **заявка-дубликат**!  
+> Если же сделать `redirect()`, адрес очищается, и при нажатии F5 пользователь просто обновит личный кабинет без повторного создания заявки.
+
+#### 3. Загрузка файлов и `request.FILES`
+Обычные текстовые поля формы передаются в словаре `request.POST`.  
+Но бинарные файлы (фотографии планов помещений, эскизы дизайна) попадают в отдельный словарь **`request.FILES`**.  
+Поэтому в представлениях создания заявки и сдачи дизайна форма инициализируется строго двумя аргументами:
+```python
+form = ApplicationCreateForm(request.POST, request.FILES)
+```
+*Если забыть передать `request.FILES`, Django даже не заметит прикрепленный файл, и он не сохранится в базу!*  
+А в HTML-форме обязательно должен быть указан атрибут: `enctype="multipart/form-data"`.
+
+#### 4. Декораторы доступа: Безопасность и разграничение прав
+Декоратор — это функция-надстройка, которая выполняется **до** вызова самого представления (своеобразный «фейсконтроль» на входе):
+- **`@login_required`:**  
+  Проверяет, авторизован ли посетитель (`request.user.is_authenticated`). Если гость попытается открыть страницу `/cabinet/` или `/application/create/`, декоратор не пустит его и мгновенно перенаправит на `/login/?next=/cabinet/`.
+- **`@user_passes_test(is_admin, login_url='login')`:**  
+  Запускает функцию проверки прав `is_admin`. Если у пользователя нет прав персонала (`is_staff` или `is_superuser`), доступ к панели администратора блокируется, и его перенаправляет на страницу авторизации.
+
+#### 5. Система Flash-сообщений (`django.contrib.messages`)
+Как передать уведомление пользователю («Заявка создана!», «Неверный пароль», «Категория удалена»), если мы делаем `redirect()`?  
+Переменные из контекста при редиректе теряются! Поэтому Django сохраняет сообщения во временное хранилище сессии пользователя:
+- `messages.success(request, 'Текст успеха')` — зеленая плашка.
+- `messages.error(request, 'Текст ошибки')` — красная плашка.
+- `messages.info(request, 'Информационный текст')` — синяя плашка.  
+При следующем открытии страницы базовый шаблон `base.html` считывает эти сообщения, отображает их и тут же удаляет из сессии.
+
+---
+
+### 6.4. Сводная архитектурная таблица всех представлений `catalog/views.py`
+
+| № | Функция представления | URL-маршрут | HTTP-методы | Права доступа | Назначение и краткая логика |
+| :- | :--- | :--- | :--- | :--- | :--- |
+| **1** | `is_admin(user)` | — (хелпер) | — | Внутренняя функция | Проверяет, что пользователь аутентифицирован и имеет флаг `is_staff` или `is_superuser`. |
+| **2** | `index(request)` | `/` | GET | Доступно всем | Главная страница: счетчик заявок в работе (`COUNT`) и 4 последние выполненные заявки с категориями. |
+| **3** | `register_view(request)` | `/register/` | GET, POST | Только для гостей | Регистрация нового клиента с серверной валидацией, автологином и редиректом в личный кабинет. |
+| **4** | `login_view(request)` | `/login/` | GET, POST | Только для гостей | Аутентификация по логину/паролю и ролевое перенаправление: клиент ➔ кабинет, админ ➔ панель управления. |
+| **5** | `logout_view(request)` | `/logout/` | GET, POST | Авторизованные | Завершение сеанса пользователя, очистка сессионных cookies и редирект на главную страницу. |
+| **6** | `cabinet_view(request)` | `/cabinet/` | GET | `@login_required` | Личный кабинет клиента: фильтрация своих заявок по статусу, бейджи-счетчики и сортировка по дате. |
+| **7** | `create_application_view(request)` | `/application/create/` | GET, POST | `@login_required` | Оформление заявки с загрузкой плана помещения до 2 Мб, автопривязкой автора и установкой статуса «Новая». |
+| **8** | `delete_application_view(request, pk)` | `/application/<pk>/delete/` | GET, POST | `@login_required` | Безопасное удаление заявки: проверка авторства (IDOR-защита), проверка статуса «Новая» и диалог подтверждения. |
+| **9** | `admin_panel_view(request)` | `/admin-panel/` | GET | `@user_passes_test` | Главная панель админа: список всех заявок с фильтрами, модалки смены статусов и блок управления категориями. |
+| **10** | `admin_change_status_in_progress(request, pk)` | `/admin-panel/application/<pk>/in-progress/` | POST | `@user_passes_test` | Смена статуса заявки «Новая» ➔ «Принято в работу» с обязательным текстовым комментарием. |
+| **11** | `admin_change_status_completed(request, pk)` | `/admin-panel/application/<pk>/completed/` | POST | `@user_passes_test` | Смена статуса заявки «Новая» ➔ «Выполнено» с обязательным прикреплением готового дизайн-проекта до 5 Мб. |
+| **12** | `admin_add_category(request)` | `/admin-panel/category/add/` | POST | `@user_passes_test` | Добавление новой категории помещений с проверкой уникальности названия без учета регистра. |
+| **13** | `admin_delete_category(request, pk)` | `/admin-panel/category/<pk>/delete/` | GET, POST | `@user_passes_test` | Каскадное удаление категории (`CASCADE`): автоматическое удаление всех заявок этой категории с подтверждением. |
+
+---
+
+### 6.5. Полный сплошной код файла `catalog/views.py` (310 строк без сокращений)
+
+Файл: [catalog/views.py](file:///C:/Users/fer/PycharmProjects/YP_DJANGO_3/design_studio/catalog/views.py)
+
+```python
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponseForbidden
+
+from .models import Application, Category, User
+from .forms import (
+    UserRegistrationForm,
+    UserLoginForm,
+    ApplicationCreateForm,
+    StatusToInProgressForm,
+    StatusToCompletedForm,
+    CategoryForm,
+)
+
+
+def is_admin(user):
+    """Проверка прав администратора"""
+    return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+
+def index(request):
+    """
+    Главная страница «Design.pro»:
+    - Счетчик: количество заявок в статусе «Принято в работу»
+    - Не более 4 последних заявок в статусе «Выполнено»
+    """
+    in_progress_count = Application.objects.filter(status=Application.STATUS_IN_PROGRESS).count()
+    completed_apps = Application.objects.filter(
+        status=Application.STATUS_COMPLETED
+    ).select_related('category').order_by('-created_at')[:4]
+
+    context = {
+        'in_progress_count': in_progress_count,
+        'completed_apps': completed_apps,
+    }
+    return render(request, 'index.html', context)
+
+
+def register_view(request):
+    """
+    Регистрация нового пользователя с серверной валидацией.
+    """
+    if request.user.is_authenticated:
+        return redirect('cabinet')
+
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, f'Регистрация прошла успешно! Добро пожаловать, {user.fio or user.username}!')
+            login(request, user)
+            return redirect('cabinet')
+        else:
+            messages.error(request, 'Пожалуйста, исправьте ошибки в форме регистрации.')
+    else:
+        form = UserRegistrationForm()
+
+    return render(request, 'registration/register.html', {'form': form})
+
+
+def login_view(request):
+    """
+    Авторизация пользователя и администратора.
+    Перенаправление:
+    - Пользователь -> Личный кабинет (cabinet)
+    - Администратор -> Панель администратора (admin_panel)
+    """
+    if request.user.is_authenticated:
+        if request.user.is_staff or request.user.is_superuser:
+            return redirect('admin_panel')
+        return redirect('cabinet')
+
+    if request.method == 'POST':
+        form = UserLoginForm(request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            messages.success(request, f'Вы успешно вошли как {user.username}!')
+
+            next_url = request.GET.get('next')
+            if next_url:
+                return redirect(next_url)
+            if user.is_staff or user.is_superuser:
+                return redirect('admin_panel')
+            return redirect('cabinet')
+        else:
+            messages.error(request, 'Неверный логин или пароль.')
+    else:
+        form = UserLoginForm()
+
+    return render(request, 'registration/login.html', {'form': form})
+
+
+def logout_view(request):
+    """
+    Выход из учетной записи для всех авторизованных пользователей.
+    """
+    logout(request)
+    messages.info(request, 'Вы успешно вышли из системы.')
+    return redirect('index')
+
+
+@login_required
+def cabinet_view(request):
+    """
+    Личный кабинет авторизованного пользователя:
+    - Просмотр своих заявок (временная метка, название, описание, категория, статус)
+    - Сортировка по умолчанию: от новых к старым (-created_at)
+    - Фильтрация по статусу (Все, Новая, Принято в работу, Выполнено)
+    """
+    user_apps = Application.objects.filter(user=request.user).select_related('category')
+
+    # Подсчет количества заявок по статусам для бейджей фильтрации
+    total_count = user_apps.count()
+    new_count = user_apps.filter(status=Application.STATUS_NEW).count()
+    in_progress_count = user_apps.filter(status=Application.STATUS_IN_PROGRESS).count()
+    completed_count = user_apps.filter(status=Application.STATUS_COMPLETED).count()
+
+    # Применение фильтра
+    current_filter = request.GET.get('status', 'all')
+    if current_filter in [Application.STATUS_NEW, Application.STATUS_IN_PROGRESS, Application.STATUS_COMPLETED]:
+        user_apps = user_apps.filter(status=current_filter)
+
+    user_apps = user_apps.order_by('-created_at')
+
+    context = {
+        'applications': user_apps,
+        'current_filter': current_filter,
+        'total_count': total_count,
+        'new_count': new_count,
+        'in_progress_count': in_progress_count,
+        'completed_count': completed_count,
+    }
+    return render(request, 'catalog/cabinet.html', context)
+
+
+@login_required
+def create_application_view(request):
+    """
+    Создание заявки на разработку дизайна интерьера помещения.
+    - Все поля обязательны
+    - Валидация фото (jpg, jpeg, png, bmp до 2 Мб)
+    - Автоматическая временная метка и статус «Новая»
+    """
+    if request.method == 'POST':
+        form = ApplicationCreateForm(request.POST, request.FILES)
+        if form.is_valid():
+            application = form.save(commit=False)
+            application.user = request.user
+            application.status = Application.STATUS_NEW
+            application.save()
+            messages.success(request, f'Заявка «{application.title}» успешно создана и получила статус «Новая»!')
+            return redirect('cabinet')
+        else:
+            messages.error(request, 'Пожалуйста, проверьте корректность заполнения полей заявки.')
+    else:
+        form = ApplicationCreateForm()
+
+    return render(request, 'catalog/application_form.html', {'form': form})
+
+
+@login_required
+def delete_application_view(request, pk):
+    """
+    Удаление заявки:
+    - Пользователь может удалить ТОЛЬКО свою заявку
+    - Удаление возможно ТОЛЬКО если статус «Новая»
+    - Обязательное подтверждение действия
+    """
+    application = get_object_or_404(Application, pk=pk, user=request.user)
+
+    if not application.is_deletable:
+        messages.error(
+            request,
+            'Запрещено! Заявку нельзя удалить, так как её статус уже изменен администратором на «Принято в работу» или «Выполнено».'
+        )
+        return redirect('cabinet')
+
+    if request.method == 'POST':
+        title = application.title
+        application.delete()
+        messages.success(request, f'Заявка «{title}» была успешно удалена.')
+        return redirect('cabinet')
+
+    return render(request, 'catalog/application_confirm_delete.html', {'application': application})
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_panel_view(request):
+    """
+    Личный кабинет администратора (панель управления):
+    - Просмотр всех заявок с фильтрацией
+    - Смена статуса заявок «Новая» -> «Принято в работу» (с комментарием)
+    - Смена статуса заявок «Новая» -> «Выполнено» (с фото дизайна)
+    - Управление категориями (добавление, удаление с каскадным удалением заявок)
+    """
+    status_filter = request.GET.get('status', 'all')
+    all_apps = Application.objects.select_related('user', 'category').all()
+
+    total_count = all_apps.count()
+    new_count = all_apps.filter(status=Application.STATUS_NEW).count()
+    in_progress_count = all_apps.filter(status=Application.STATUS_IN_PROGRESS).count()
+    completed_count = all_apps.filter(status=Application.STATUS_COMPLETED).count()
+
+    if status_filter in [Application.STATUS_NEW, Application.STATUS_IN_PROGRESS, Application.STATUS_COMPLETED]:
+        applications = all_apps.filter(status=status_filter).order_by('-created_at')
+    else:
+        applications = all_apps.order_by('-created_at')
+
+    categories = Category.objects.all().order_by('name')
+    category_form = CategoryForm()
+
+    context = {
+        'applications': applications,
+        'categories': categories,
+        'category_form': category_form,
+        'status_filter': status_filter,
+        'total_count': total_count,
+        'new_count': new_count,
+        'in_progress_count': in_progress_count,
+        'completed_count': completed_count,
+    }
+    return render(request, 'catalog/admin_panel.html', context)
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_change_status_in_progress(request, pk):
+    """
+    Смена статуса заявки с «Новая» на «Принято в работу» с обязательным комментарием.
+    """
+    application = get_object_or_404(Application, pk=pk)
+
+    if application.status != Application.STATUS_NEW:
+        messages.error(request, 'Смена статуса с «Принято в работу» или «Выполнено» невозможна.')
+        return redirect('admin_panel')
+
+    if request.method == 'POST':
+        form = StatusToInProgressForm(request.POST)
+        if form.is_valid():
+            application.status = Application.STATUS_IN_PROGRESS
+            application.comment = form.cleaned_data['comment']
+            application.save()
+            messages.success(request, f'Заявка #{application.pk} переведена в статус «Принято в работу».')
+        else:
+            messages.error(request, 'Для перевода заявки в работу обязательно укажите комментарий.')
+    return redirect('admin_panel')
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_change_status_completed(request, pk):
+    """
+    Смена статуса заявки с «Новая» на «Выполнено» с обязательным прикреплением изображения дизайна.
+    """
+    application = get_object_or_404(Application, pk=pk)
+
+    if application.status != Application.STATUS_NEW:
+        messages.error(request, 'Смена статуса с «Принято в работу» или «Выполнено» невозможна.')
+        return redirect('admin_panel')
+
+    if request.method == 'POST':
+        form = StatusToCompletedForm(request.POST, request.FILES)
+        if form.is_valid():
+            application.status = Application.STATUS_COMPLETED
+            application.design_image = form.cleaned_data['design_image']
+            application.save()
+            messages.success(request, f'Заявка #{application.pk} успешно выполнена и прикреплен дизайн!')
+        else:
+            messages.error(request, 'Для завершения заявки обязательно загрузите изображение дизайна (jpg, jpeg, png, bmp до 5 Мб).')
+    return redirect('admin_panel')
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_add_category(request):
+    """
+    Добавление новой категории заявок администратором.
+    """
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Категория «{category.name}» успешно добавлена.')
+        else:
+            for field, errs in form.errors.items():
+                for e in errs:
+                    messages.error(request, f'Ошибка категории: {e}')
+    return redirect('admin_panel')
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_delete_category(request, pk):
+    """
+    Удаление категории заявок:
+    При удалении категории каскадно удаляются все заявки данной категории.
+    """
+    category = get_object_or_404(Category, pk=pk)
+
+    if request.method == 'POST':
+        name = category.name
+        apps_count = category.applications.count()
+        category.delete()  # Каскадное удаление заявок через on_delete=models.CASCADE
+        messages.success(
+            request,
+            f'Категория «{name}» и все привязанные заявки ({apps_count} шт.) были безвозвратно удалены.'
+        )
+        return redirect('admin_panel')
+
+    return render(request, 'catalog/category_confirm_delete.html', {'category': category})
+```
 
 ---
 
@@ -1686,11 +2113,205 @@ class User(AbstractUser):
 - `UserRegistrationForm`: реализует методы `clean_fio()`, `clean_username()`, `clean()` для паролей и валидацию согласия на ПДн.
 - `UserLoginForm`: реализует аутентификацию через `authenticate(username=..., password=...)`.
 
-### 3. Контроллеры гостевого функционала (`catalog/views.py`)
-Файл: [catalog/views.py](file:///C:/Users/fer/PycharmProjects/YP_DJANGO_3/design_studio/catalog/views.py)
-- `index(request)`: вычисляет счетчик `Application.objects.filter(status=Application.STATUS_IN_PROGRESS).count()` и срез 4-х последних выполненных работ `completed_apps = Application.objects.filter(status=Application.STATUS_COMPLETED).select_related('category').order_by('-created_at')[:4]`.
-- `register_view(request)`: сохраняет пользователя, вызывает `login(request, user)` и перенаправляет в кабинет.
-- `login_view(request)`: аутентифицирует пользователя и перенаправляет в зависимости от флагов `is_staff` / `is_superuser`.
+### 3. Контроллеры гостевого функционала (`catalog/views.py`) — Детальный разбор функций
+
+Файл: [catalog/views.py](file:///C:/Users/fer/PycharmProjects/YP_Django_3/design_studio/catalog/views.py)
+
+В рамках Практической работы №2.1 (Функционал гостя) задействованы три ключевых представления:
+1. `index(request)` — Главная страница-витрина студии со счетчиком и 4-мя последними работами.
+2. `register_view(request)` — Регистрация нового аккаунта с серверной валидацией и автовходом.
+3. `login_view(request)` — Авторизация пользователей и администратора с ролевым перенаправлением.
+
+```python
+from django.shortcuts import render, redirect
+from django.contrib.auth import login
+from django.contrib import messages
+from .models import Application
+from .forms import UserRegistrationForm, UserLoginForm
+```
+
+---
+
+#### 3.1. Функция `index(request)` — Главная страница («Витрина студии»)
+
+```python
+def index(request):
+    """
+    Главная страница «Design.pro»:
+    - Счетчик: количество заявок в статусе «Принято в работу»
+    - Не более 4 последних заявок в статусе «Выполнено»
+    """
+    in_progress_count = Application.objects.filter(status=Application.STATUS_IN_PROGRESS).count()
+    completed_apps = Application.objects.filter(
+        status=Application.STATUS_COMPLETED
+    ).select_related('category').order_by('-created_at')[:4]
+
+    context = {
+        'in_progress_count': in_progress_count,
+        'completed_apps': completed_apps,
+    }
+    return render(request, 'index.html', context)
+```
+
+##### Логика работы «на пальцах» (без заморочек):
+Когда посетитель заходит на сайт `http://localhost:8089/`, браузер делает GET-запрос к `index()`.
+Функция делает две вещи:
+1. Идет в базу данных и считает, сколько сейчас заявок «в работе» (например, 7 штук). Это число выводится крупной цифрой в промо-блоке.
+2. Ищет все готовые дизайн-проекты (статус «Выполнено»), берет из них **ровно 4 самые свежие работы** и прикрепляет к ним названия категорий.
+3. Упаковывает всё это в «чемоданчик» (словарь `context`) и отправляет в шаблон `index.html`. Шаблон превращает эти данные в красивую страницу.
+
+##### Построчный разбор каждой команды:
+- `in_progress_count = Application.objects.filter(status=Application.STATUS_IN_PROGRESS).count()`:
+  - `Application.objects.filter(...)` — отбирает из таблицы заявок только те, у которых статус равен `'in_progress'`.
+  - `.count()` — **критически важная оптимизация!** Он не загружает объекты заявок в оперативную память Python, а заставляет СУБД выполнить быстрый SQL-запрос `SELECT COUNT(*) FROM catalog_application WHERE status = 'in_progress';`. Это работает мгновенно даже при миллионе записей.
+- `completed_apps = Application.objects.filter(status=Application.STATUS_COMPLETED)`:
+  - Фильтрует только завершенные заявки (`status='completed'`).
+- `.select_related('category')`:
+  - **Оптимизация жадной загрузки (Eager Loading):** модель `Application` связана с моделью `Category` через внешний ключ `ForeignKey`. Если не написать `.select_related('category')`, Django при выводе имени каждой категории в цикле шаблона будет делать отдельный SQL-запрос к таблице категорий (так называемая проблема N+1 запросов). Метод `select_related` делает один умный SQL `INNER JOIN`, подтягивая названия категорий сразу в основном запросе.
+- `.order_by('-created_at')`:
+  - Знак минус перед `created_at` означает сортировку по убыванию (SQL `ORDER BY created_at DESC`). То есть самые новые завершенные проекты будут идти первыми.
+- `[:4]`:
+  - Стандартный срез Python, который Django ORM транслирует в SQL-директиву `LIMIT 4`. Из базы извлекаются ровно 4 строки, что строго соответствует ТЗ («не более 4 последних заявок»).
+- `context = {'in_progress_count': in_progress_count, 'completed_apps': completed_apps}`:
+  - Создает словарь данных для шаблонизатора DTL. Внутри `index.html` эти переменные будут доступны как `{{ in_progress_count }}` и `{% for app in completed_apps %}`.
+- `return render(request, 'index.html', context)`:
+  - Склеивает шаблон с данными и возвращает браузеру готовую HTML-страницу со статусом `200 OK`.
+
+---
+
+#### 3.2. Функция `register_view(request)` — Регистрация нового пользователя
+
+```python
+def register_view(request):
+    """
+    Регистрация нового пользователя с серверной валидацией.
+    """
+    if request.user.is_authenticated:
+        return redirect('cabinet')
+
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, f'Регистрация прошла успешно! Добро пожаловать, {user.fio or user.username}!')
+            login(request, user)
+            return redirect('cabinet')
+        else:
+            messages.error(request, 'Пожалуйста, исправьте ошибки в форме регистрации.')
+    else:
+        form = UserRegistrationForm()
+
+    return render(request, 'registration/register.html', {'form': form})
+```
+
+##### Логика работы «на пальцах» (без заморочек):
+- Если на страницу регистрации случайно зашел уже авторизованный пользователь, мы не мучаем его формой, а сразу перенаправляем в личный кабинет (`redirect('cabinet')`).
+- Если пользователь просто открыл страницу (метод `GET`), мы создаем чистую пустую форму `UserRegistrationForm()` и показываем её (`render`).
+- Если пользователь заполнил поля и нажал кнопку «Зарегистрироваться» (метод `POST`):
+  1. Загружаем присланные данные в форму.
+  2. Запускаем строгую проверку `form.is_valid()` (ФИО на кириллицу, уникальность логина, совпадение паролей, галочку ПДн).
+  3. Если всё чисто — создаем пользователя в БД (`form.save()`), показываем зеленое уведомление «Регистрация прошла успешно!», **сразу авторизуем его** (`login(request, user)`) и отправляем в личный кабинет. Пользователю не нужно второй раз вводить логин и пароль!
+  4. Если найдены ошибки — выводим красное сообщение, и снова отображаем форму: поля с ошибками подсветятся красным цветом (класс `is-invalid`), а под ними напишется точная причина ошибки.
+
+##### Построчный разбор каждой команды:
+- `if request.user.is_authenticated: return redirect('cabinet')`:
+  - Защита от бессмысленных действий. Проверяет, вошел ли пользователь в систему. Если да — перенаправляет в кабинет.
+- `if request.method == 'POST':`:
+  - Проверяет тип HTTP-запроса. Если метод `POST` — значит, пользователь нажал кнопку отправки формы.
+- `form = UserRegistrationForm(request.POST)`:
+  - Создает экземпляр формы и «связывает» (bind) его с данными из `request.POST`.
+- `if form.is_valid():`:
+  - Запускает валидацию всех полей и кастомные методы `clean_fio()`, `clean_username()`, `clean()`. Если хотя бы в одном поле ошибка — возвращает `False`.
+- `user = form.save()`:
+  - Вызывает метод `save()` нашей формы. Внутри него вызывается `user.set_password(password)`, который хэширует пароль по алгоритму PBKDF2/SHA-256 и сохраняет новую запись в таблице `catalog_user`.
+- `messages.success(request, f'...')`:
+  - Записывает flash-сообщение об успехе во временное хранилище сессии.
+- `login(request, user)`:
+  - Стандартная функция Django Auth. Создает запись сессии в таблице `django_session` и записывает идентификатор пользователя в зашифрованные cookie браузера (`sessionid`).
+- `return redirect('cabinet')`:
+  - Паттерн PRG: шлет ответ `302 Found` с переходом на страницу личного кабинета.
+- Ветка `else` (при невалидной форме):
+  - `messages.error(request, 'Пожалуйста, исправьте ошибки...')` выводит предупреждение.
+- Ветка `else` (при GET-запросе):
+  - `form = UserRegistrationForm()` создает пустую несвязанную форму для первичного отображения.
+- `return render(request, 'registration/register.html', {'form': form})`:
+  - Отрисовывает страницу. Если форма содержала ошибки, объект `form` передаст их в HTML, где сработают блоки `{% if form.field.errors %}`.
+
+---
+
+#### 3.3. Функция `login_view(request)` — Авторизация и ролевая маршрутизация
+
+```python
+def login_view(request):
+    """
+    Авторизация пользователя и администратора.
+    Перенаправление:
+    - Пользователь -> Личный кабинет (cabinet)
+    - Администратор -> Панель администратора (admin_panel)
+    """
+    if request.user.is_authenticated:
+        if request.user.is_staff or request.user.is_superuser:
+            return redirect('admin_panel')
+        return redirect('cabinet')
+
+    if request.method == 'POST':
+        form = UserLoginForm(request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            messages.success(request, f'Вы успешно вошли как {user.username}!')
+
+            next_url = request.GET.get('next')
+            if next_url:
+                return redirect(next_url)
+            if user.is_staff or user.is_superuser:
+                return redirect('admin_panel')
+            return redirect('cabinet')
+        else:
+            messages.error(request, 'Неверный логин или пароль.')
+    else:
+        form = UserLoginForm()
+
+    return render(request, 'registration/login.html', {'form': form})
+```
+
+##### Логика работы «на пальцах» (без заморочек):
+- Если пользователь уже авторизован и опять заходит на `/login/`, система смотрит на его роль: администратора шлет в Панель управления (`/admin-panel/`), а обычного клиента — в Личный кабинет (`/cabinet/`).
+- При открытии страницы (`GET`) отдается пустая форма с полями «Логин» и «Пароль».
+- При нажатии кнопки «Войти» (`POST`):
+  1. Форма `UserLoginForm` проверяет, есть ли такой логин и подходит ли пароль (через стандартный `django.contrib.auth.authenticate`).
+  2. Если пароль не подошел — форма признается невалидной, и пользователю выводится красная ошибка: *«Неверный логин или пароль»*.
+  3. Если всё верно — авторизуем пользователя через `login(request, user)`.
+  4. Проверяем параметр `?next=`. Например, если неавторизованный клиент пытался открыть `/application/create/`, система сначала отправила его на страницу логина с адресом `/login/?next=/application/create/`. После успешного входа система вернет его ровно туда, куда он и шел!
+  5. Если параметра `next` не было, включается **ролевой светофор**:
+     - Если вошел админ (`is_staff` или `is_superuser`) — открывается `/admin-panel/`.
+     - Если вошел клиент — открывается `/cabinet/`.
+
+##### Построчный разбор каждой команды:
+- `if request.user.is_authenticated:`:
+  - Проверка активной сессии. Если пользователь уже залогинен, проверяются флаги прав:
+    - `if request.user.is_staff or request.user.is_superuser:` ➔ редирект на `admin_panel`.
+    - Иначе ➔ редирект на `cabinet`.
+- `form = UserLoginForm(request.POST)`:
+  - Инициализация формы аутентификации присланными логином и паролем.
+- `if form.is_valid():`:
+  - Внутри формы вызывается `authenticate()`. Метод проверяет хэш пароля. Если совпало — форма валидна.
+- `user = form.get_user()`:
+  - Достает найденный и подтвержденный объект пользователя из формы.
+- `login(request, user)`:
+  - Создает сессию для данного пользователя.
+- `next_url = request.GET.get('next')`:
+  - Считывает GET-параметр `next` из адресной строки браузера.
+- `if next_url: return redirect(next_url)`:
+  - Бесшовный возврат на ранее запрошенную страницу.
+- `if user.is_staff or user.is_superuser: return redirect('admin_panel')`:
+  - Перенаправление администратора по ТЗ в специальную панель управления.
+- `return redirect('cabinet')`:
+  - Перенаправление обычного клиента в его личный кабинет.
+- `messages.error(request, 'Неверный логин или пароль.')`:
+  - Защита от подбора паролей: мы не уточняем, что именно неверно (логин или пароль), чтобы не подсказывать злоумышленнику существование логина.
+
+---
 
 ### 4. Маршрутизация URL (`catalog/urls.py`)
 ```python
@@ -2221,11 +2842,226 @@ class Application(models.Model):
 ### 2. Форма создания заявки (`catalog/forms.py`)
 Форма `ApplicationCreateForm` содержит поля `title`, `description`, `category`, `photo` с переопределением метода `clean_photo()` для валидации веса и типа файла.
 
-### 3. Контроллеры пользователя (`catalog/views.py`)
-- `logout_view(request)`: завершает сессию через `logout(request)`.
-- `cabinet_view(request)`: защищен декоратором `@login_required`, производит фильтрацию по `user=request.user` и GET-параметру `status`.
-- `create_application_view(request)`: сохраняет заявку через `form.save(commit=False)` с привязкой `app.user = request.user` и начальным статусом `STATUS_NEW`.
-- `delete_application_view(request, pk)`: проверяет `application.user == request.user` и `application.is_deletable`, после чего удаляет объект.
+### 3. Контроллеры пользователя (`catalog/views.py`) — Детальный разбор функций
+
+Файл: [catalog/views.py](file:///C:/Users/fer/PycharmProjects/YP_DJANGO_3/design_studio/catalog/views.py)
+
+В рамках Практической работы №2.2 (Функционал зарегистрированного клиента) реализованы 4 контроллера:
+1. `logout_view(request)` — Безопасный выход из аккаунта и очистка сессии.
+2. `cabinet_view(request)` — Личный кабинет клиента с бейджами-счетчиками и фильтрацией заявок по статусам.
+3. `create_application_view(request)` — Создание заявки с валидацией файла плана до 2 Мб и автопривязкой автора.
+4. `delete_application_view(request, pk)` — Двухэтапное безопасное удаление только своих заявок и только в статусе «Новая».
+
+```python
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import Application
+from .forms import ApplicationCreateForm
+```
+
+---
+
+#### 3.1. Функция `logout_view(request)` — Выход из системы
+
+```python
+def logout_view(request):
+    """
+    Выход из учетной записи для всех авторизованных пользователей.
+    """
+    logout(request)
+    messages.info(request, 'Вы успешно вышли из системы.')
+    return redirect('index')
+```
+
+##### Логика работы «на пальцах» (без заморочек):
+Когда пользователь кликает на кнопку «Выход»:
+1. Функция `logout(request)` находит текущую сессию в базе данных SQLite (в таблице `django_session`) и стирает её. В браузере очищается идентификатор `sessionid`.
+2. В систему сообщений добавляется информационная плашка: *«Вы успешно вышли из системы»*.
+3. Пользователь перенаправляется на главную страницу (`index`), где навигационная панель снова показывает ссылки «Вход» и «Регистрация».
+
+##### Построчный разбор:
+- `logout(request)`: Встроенный механизм безопасности Django. Он полностью обнуляет объект `request.user` (превращая его в `AnonymousUser`) и инвалидирует куки сессии, предотвращая угон аккаунта через оставленную вкладку браузера.
+- `messages.info(request, '...')`: Формирует синее всплывающее уведомление для пользователя.
+- `return redirect('index')`: Безопасное перенаправление на корень сайта (`/`).
+
+---
+
+#### 3.2. Функция `cabinet_view(request)` — Личный кабинет и фильтрация заявок
+
+```python
+@login_required
+def cabinet_view(request):
+    """
+    Личный кабинет авторизованного пользователя:
+    - Просмотр своих заявок (временная метка, название, описание, категория, статус)
+    - Сортировка по умолчанию: от новых к старым (-created_at)
+    - Фильтрация по статусу (Все, Новая, Принято в работу, Выполнено)
+    """
+    user_apps = Application.objects.filter(user=request.user).select_related('category')
+
+    # Подсчет количества заявок по статусам для бейджей фильтрации
+    total_count = user_apps.count()
+    new_count = user_apps.filter(status=Application.STATUS_NEW).count()
+    in_progress_count = user_apps.filter(status=Application.STATUS_IN_PROGRESS).count()
+    completed_count = user_apps.filter(status=Application.STATUS_COMPLETED).count()
+
+    # Применение фильтра
+    current_filter = request.GET.get('status', 'all')
+    if current_filter in [Application.STATUS_NEW, Application.STATUS_IN_PROGRESS, Application.STATUS_COMPLETED]:
+        user_apps = user_apps.filter(status=current_filter)
+
+    user_apps = user_apps.order_by('-created_at')
+
+    context = {
+        'applications': user_apps,
+        'current_filter': current_filter,
+        'total_count': total_count,
+        'new_count': new_count,
+        'in_progress_count': in_progress_count,
+        'completed_count': completed_count,
+    }
+    return render(request, 'catalog/cabinet.html', context)
+```
+
+##### Логика работы «на пальцах» (без заморочек):
+1. **Фейсконтроль (`@login_required`):** Если на страницу заглянет гость — декоратор тут же развернет его и отправит авторизоваться.
+2. **Только свои заявки:** Первым делом берем из базы заявки, где автор строго равен текущему вошедшему клиенту (`user=request.user`). Чужие заявки клиент не увидит ни при каких обстоятельствах!
+3. **Красивые бейджи-счетчики:** Считаем, сколько у пользователя всего заявок, сколько из них новых, сколько в работе и сколько готово. Эти цифры выводятся прямо внутри кнопок фильтров: `[Все (5)]`, `[Новые (2)]`, `[В работе (1)]`, `[Выполнено (2)]`.
+4. **Фильтрация в один клик:** Пользователь нажимает на кнопку «Новые» — в строке браузера появляется `?status=new`. Функция считывает этот параметр через `request.GET.get('status')` и оставляет в списке только заявки со статусом `new`. Если параметр пустой или равен `all` — показываются все заявки.
+5. **Сортировка:** Новые заявки всегда идут первыми сверху (`order_by('-created_at')`).
+6. **Вывод:** Данные отправляются в шаблон `cabinet.html`.
+
+##### Построчный разбор каждой команды:
+- `@login_required`:
+  - Декоратор проверяет флаг `request.user.is_authenticated`. При `False` возвращает `HTTP 302 Redirect` на `settings.LOGIN_URL` (`/login/?next=/cabinet/`).
+- `user_apps = Application.objects.filter(user=request.user).select_related('category')`:
+  - Базовый QuerySet. Важнейшая изоляция данных: `user=request.user`. Никакой пользователь не может просмотреть чужие заявки.
+  - `select_related('category')` устраняет проблему N+1 запросов, подгружая имена категорий в одном SQL-запросе с заявками.
+- `total_count = user_apps.count()` и последующие `.count()`:
+  - Вычисляют точные цифры для каждого бейджа через легкие SQL-запросы `COUNT(*)`.
+- `current_filter = request.GET.get('status', 'all')`:
+  - Извлекает значение GET-параметра `status`. Если параметра нет, значением по умолчанию становится `'all'`.
+- `if current_filter in [...]`:
+  - Белый список (White List) допустимых значений фильтра. Защищает базу данных от некорректных или вредоносных значений, подставленных вручную в URL.
+- `user_apps = user_apps.order_by('-created_at')`:
+  - Сортирует итоговый отфильтрованный список от самых свежих к самым старым.
+- `return render(request, 'catalog/cabinet.html', context)`:
+  - Отрисовывает страницу кабинета с таблицей заявок и активным фильтром.
+
+---
+
+#### 3.3. Функция `create_application_view(request)` — Создание заявки клиентом
+
+```python
+@login_required
+def create_application_view(request):
+    """
+    Создание заявки на разработку дизайна интерьера помещения.
+    - Все поля обязательны
+    - Валидация фото (jpg, jpeg, png, bmp до 2 Мб)
+    - Автоматическая временная метка и статус «Новая»
+    """
+    if request.method == 'POST':
+        form = ApplicationCreateForm(request.POST, request.FILES)
+        if form.is_valid():
+            application = form.save(commit=False)
+            application.user = request.user
+            application.status = Application.STATUS_NEW
+            application.save()
+            messages.success(request, f'Заявка «{application.title}» успешно создана и получила статус «Новая»!')
+            return redirect('cabinet')
+        else:
+            messages.error(request, 'Пожалуйста, проверьте корректность заполнения полей заявки.')
+    else:
+        form = ApplicationCreateForm()
+
+    return render(request, 'catalog/application_form.html', {'form': form})
+```
+
+##### Логика работы «на пальцах» (без заморочек):
+1. Клиент нажимает пункт меню «Создать заявку» (метод `GET`) ➔ открывается форма с полями: «Название», «Описание», выпадающий список «Категория» и поле загрузки файла «План помещения».
+2. Клиент заполняет поля, прикрепляет план квартиры и жмет «Отправить заявку» (метод `POST`):
+   - **Важнейшая деталь:** форма принимает не только текст `request.POST`, но и файл `request.FILES`.
+   - Запускается проверка: название заполнено, категория выбрана, файл не тяжелее 2 Мб и имеет правильный формат (jpg, png, bmp).
+   - Если всё верно — происходит изящный трюк с **`commit=False`**: мы создаем заявку в памяти компьютера, сервер сам своей рукой подписывает автора (`application.user = request.user`) и ставит статус «Новая» (`STATUS_NEW`). Клиент никак не может подделать автора или поставить статус «Выполнено»!
+   - Заявка сохраняется в базу данных SQLite, файл плана сохраняется в папку `media/photos/`.
+   - Появляется зеленая плашка об успехе, и клиент перенаправляется в кабинет к списку своих заявок.
+   - Если файл был больше 2 Мб или поле пустое — форма подсветит ошибки красным цветом.
+
+##### Построчный разбор каждой команды:
+- `form = ApplicationCreateForm(request.POST, request.FILES)`:
+  - Инициализирует форму текстом (`POST`) и бинарным потоком загруженного файла (`FILES`).
+- `if form.is_valid():`:
+  - Проверяет все поля модели и вызывает валидатор файла `validate_photo_file`.
+- `application = form.save(commit=False)`:
+  - **Что такое `commit=False`?** Метод создает объект модели `Application` в памяти Python, но **НЕ отправляет SQL-запрос `INSERT` в базу данных**. Это нужно потому, что поля `user` (автор) и `status` в форме отсутствуют (их нельзя доверять вводить пользователю!).
+- `application.user = request.user`:
+  - На сервере принудительно устанавливаем текущего авторизованного пользователя в качестве владельца заявки.
+- `application.status = Application.STATUS_NEW`:
+  - Гарантируем, что любая созданная заявка получает статус `new` («Новая»).
+- `application.save()`:
+  - Теперь, когда все обязательные поля заполнены, вызывается финальное сохранение в БД. Django автоматически сохраняет файл в `media/photos/` и генерирует дату создания `created_at`.
+- `messages.success(request, f'Заявка «...» успешно создана...!')`:
+  - Flash-уведомление для информирования клиента.
+- `return redirect('cabinet')`:
+  - Перенаправление в кабинет по паттерну PRG (предотвращает повторную отправку при F5).
+
+---
+
+#### 3.4. Функция `delete_application_view(request, pk)` — Безопасное удаление заявки
+
+```python
+@login_required
+def delete_application_view(request, pk):
+    """
+    Удаление заявки:
+    - Пользователь может удалить ТОЛЬКО свою заявку
+    - Удаление возможно ТОЛЬКО если статус «Новая»
+    - Обязательное подтверждение действия
+    """
+    application = get_object_or_404(Application, pk=pk, user=request.user)
+
+    if not application.is_deletable:
+        messages.error(
+            request,
+            'Запрещено! Заявку нельзя удалить, так как её статус уже изменен администратором на «Принято в работу» или «Выполнено».'
+        )
+        return redirect('cabinet')
+
+    if request.method == 'POST':
+        title = application.title
+        application.delete()
+        messages.success(request, f'Заявка «{title}» была успешно удалена.')
+        return redirect('cabinet')
+
+    return render(request, 'catalog/application_confirm_delete.html', {'application': application})
+```
+
+##### Логика работы «на пальцах» (без заморочек):
+Удаление заявки — операция необратимая, поэтому здесь действуют **три железных правила безопасности**:
+1. **Защита от хакеров (IDOR-защита):** Заявка ищется строго с условием `user=request.user`. Если злоумышленник попытается удалить чужую заявку, вручную введя в браузере `http://localhost:8089/application/42/delete/`, система выдаст ошибку `404 Страница не найдена` — для чужака этой заявки просто не существует!
+2. **Бизнес-правило ТЗ:** Заявку разрешено удалять **только пока она «Новая»**. Если дизайнер уже взял её в работу или выполнил, удалять её категорически запрещено! В таком случае пользователю покажется красная ошибка, а операция заблокируется.
+3. **Двухэтапное подтверждение (защита от случайного клика):**
+   - Этап 1 (`GET`): Пользователь нажал кнопку с иконкой урны в таблице. Сервер открывает отдельную страницу подтверждения: *«Вы действительно хотите удалить заявку "Дизайн гостиной"? Это действие нельзя отменить!»* с кнопками «Да, удалить» и «Отмена».
+   - Этап 2 (`POST`): Пользователь нажимает «Да, удалить». Отправляется POST-запрос, запись стирается из базы данных, а пользователь возвращается в кабинет с зеленым сообщением об успехе.
+
+##### Построчный разбор каждой команды:
+- `application = get_object_or_404(Application, pk=pk, user=request.user)`:
+  - Ищет заявку по первичному ключу `pk` И по владельцу `request.user`. Если запись не найдена или принадлежит другому человеку — немедленно выбрасывает исключение `Http404`.
+- `if not application.is_deletable:`:
+  - Обращение к кастомному свойству модели `Application` (`@property def is_deletable: return self.status == self.STATUS_NEW`).
+- `messages.error(request, 'Запрещено! ...')`:
+  - Блокирует удаление и сообщает клиенту о нарушении регламента.
+- `if request.method == 'POST':`:
+  - Проверяет, что пользователь подтвердил удаление отправкой формы с CSRF-токеном.
+- `application.delete()`:
+  - Выполняет SQL-запрос `DELETE FROM catalog_application WHERE id = ...;` и удаляет привязанный файл изображения с диска.
+- `return render(request, 'catalog/application_confirm_delete.html', {'application': application})`:
+  - Отрисовывает страницу диалога подтверждения при первом переходе по ссылке (метод `GET`).
+
+---
 
 ### 4. Маршрутизация URL (`catalog/urls.py`)
 ```python
@@ -2650,12 +3486,328 @@ def validate_design_file(file):
 - `StatusToCompletedForm`: поле `design_image` (обязательно, валидатор до 5 Мб).
 - `CategoryForm`: поле `name` (проверка уникальности `clean_name()`).
 
-### 3. Контроллеры панели администратора (`catalog/views.py`)
-- `admin_panel_view(request)`: вывод всех заявок всех пользователей с фильтрацией и списка категорий.
-- `admin_change_status_in_progress(request, pk)`: смена на «Принято в работу» при `application.status == STATUS_NEW`.
-- `admin_change_status_completed(request, pk)`: смена на «Выполнено» при `application.status == STATUS_NEW` с сохранением дизайна в `media/designs/`.
-- `admin_add_category(request)`: создание новой категории.
-- `admin_delete_category(request, pk)`: каскадное удаление категории и привязанных заявок.
+### 3. Контроллеры панели администратора (`catalog/views.py`) — Детальный разбор функций
+
+Файл: [catalog/views.py](file:///C:/Users/fer/PycharmProjects/YP_DJANGO_3/design_studio/catalog/views.py)
+
+В рамках Практической работы №2.3 (Функционал администратора) реализовано разграничение прав доступа и 6 управляющих контроллеров:
+1. `is_admin(user)` — Функция-предикат для проверки прав сотрудника или суперпользователя.
+2. `admin_panel_view(request)` — Сводная панель управления: просмотр всех заявок с фильтрами, статистика и блок категорий.
+3. `admin_change_status_in_progress(request, pk)` — Смена статуса заявки «Новая» ➔ «Принято в работу» с обязательным комментарием.
+4. `admin_change_status_completed(request, pk)` — Смена статуса «Новая» ➔ «Выполнено» с обязательным прикреплением файла дизайна до 5 Мб.
+5. `admin_add_category(request)` — Добавление новой категории помещений с проверкой уникальности.
+6. `admin_delete_category(request, pk)` — Каскадное удаление категории и всех сопряженных заявок (`on_delete=models.CASCADE`).
+
+```python
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import user_passes_test
+from django.contrib import messages
+from .models import Application, Category
+from .forms import StatusToInProgressForm, StatusToCompletedForm, CategoryForm
+```
+
+---
+
+#### 3.1. Функция-предикат `is_admin(user)` и декоратор `@user_passes_test`
+
+```python
+def is_admin(user):
+    """Проверка прав администратора"""
+    return user.is_authenticated and (user.is_staff or user.is_superuser)
+```
+
+##### Логика работы «на пальцах» (без заморочек):
+Это функция-«вахтер». Она принимает объект пользователя и дает один из двух ответов: `True` (пропускаем) или `False` (вход запрещен).  
+Условия для допуска:
+1. Пользователь должен быть авторизован (`is_authenticated`).
+2. У него должна стоять хотя бы одна из двух галочек администратора: `is_staff` (сотрудник) или `is_superuser` (главный администратор).  
+Если обычный клиент (у которого эти флаги равны `False`) попробует зайти на любой URL админки, декоратор `@user_passes_test(is_admin, login_url='login')` не пустит его и перебросит на страницу входа.
+
+##### Построчный разбор:
+- `user.is_authenticated`: Исключает анонимных посетителей (гостей сайта).
+- `(user.is_staff or user.is_superuser)`: Проверяет системные флаги прав модели `AbstractUser`.
+- `@user_passes_test(is_admin, login_url='login')`: Стандартный декоратор безопасности Django. Он оборачивает каждую функцию администратора. Если вызов `is_admin(request.user)` вернул `False`, запрос немедленно прерывается редиректом на `login_url`.
+
+---
+
+#### 3.2. Функция `admin_panel_view(request)` — Главная панель управления
+
+```python
+@user_passes_test(is_admin, login_url='login')
+def admin_panel_view(request):
+    """
+    Личный кабинет администратора (панель управления):
+    - Просмотр всех заявок с фильтрацией
+    - Смена статуса заявок «Новая» -> «Принято в работу» (с комментарием)
+    - Смена статуса заявок «Новая» -> «Выполнено» (с фото дизайна)
+    - Управление категориями (добавление, удаление с каскадным удалением заявок)
+    """
+    status_filter = request.GET.get('status', 'all')
+    all_apps = Application.objects.select_related('user', 'category').all()
+
+    total_count = all_apps.count()
+    new_count = all_apps.filter(status=Application.STATUS_NEW).count()
+    in_progress_count = all_apps.filter(status=Application.STATUS_IN_PROGRESS).count()
+    completed_count = all_apps.filter(status=Application.STATUS_COMPLETED).count()
+
+    if status_filter in [Application.STATUS_NEW, Application.STATUS_IN_PROGRESS, Application.STATUS_COMPLETED]:
+        applications = all_apps.filter(status=status_filter).order_by('-created_at')
+    else:
+        applications = all_apps.order_by('-created_at')
+
+    categories = Category.objects.all().order_by('name')
+    category_form = CategoryForm()
+
+    context = {
+        'applications': applications,
+        'categories': categories,
+        'category_form': category_form,
+        'status_filter': status_filter,
+        'total_count': total_count,
+        'new_count': new_count,
+        'in_progress_count': in_progress_count,
+        'completed_count': completed_count,
+    }
+    return render(request, 'catalog/admin_panel.html', context)
+```
+
+##### Логика работы «на пальцах» (без заморочек):
+Это главный рабочий пульт администратора студии.  
+Когда админ заходит на `/admin-panel/`:
+1. Из базы вынимаются **абсолютно все заявки всех клиентов** (в отличие от кабинета клиента, где выборка ограничена `user=request.user`).
+2. Чтобы сервер не тормозил, используется жадная загрузка `.select_related('user', 'category')` — одним махом подтягиваются логины авторов и названия категорий.
+3. Считаются счетчики для бейджей на кнопках фильтра: сколько всего, новых, в работе и выполненных.
+4. Если админ кликнул по фильтру (например, `?status=new`), список заявок фильтруется.
+5. Загружается список всех категорий помещений, отсортированный по алфавиту (`order_by('name')`).
+6. Создается пустая форма `CategoryForm()` для быстрого добавления новой категории прямо на этой странице.
+7. Всё отрисовывается в шаблоне `admin_panel.html`.
+
+##### Построчный разбор каждой команды:
+- `all_apps = Application.objects.select_related('user', 'category').all()`:
+  - Формирует QuerySet со всеми заявками и выполняет двойной SQL `INNER JOIN` (с таблицей `catalog_user` и `catalog_category`). Это предотвращает десятки лишних запросов к базе.
+- `status_filter = request.GET.get('status', 'all')`:
+  - Получает выбранный статус из строки браузера.
+- `total_count`, `new_count`, `in_progress_count`, `completed_count`:
+  - Вычисляют агрегированную статистику через вызовы `.count()`.
+- `applications = all_apps.filter(status=status_filter).order_by('-created_at')`:
+  - Применяет фильтрацию и сортировку по убыванию даты создания (свежие заявки сверху).
+- `categories = Category.objects.all().order_by('name')`:
+  - Загружает справочник категорий в алфавитном порядке.
+- `category_form = CategoryForm()`:
+  - Инициализирует форму для блока создания категории.
+- `return render(request, 'catalog/admin_panel.html', context)`:
+  - Отрисовывает интерфейс панели управления.
+
+---
+
+#### 3.3. Функция `admin_change_status_in_progress(request, pk)` — Перевод заявки в работу
+
+```python
+@user_passes_test(is_admin, login_url='login')
+def admin_change_status_in_progress(request, pk):
+    """
+    Смена статуса заявки с «Новая» на «Принято в работу» с обязательным комментарием.
+    """
+    application = get_object_or_404(Application, pk=pk)
+
+    if application.status != Application.STATUS_NEW:
+        messages.error(request, 'Смена статуса с «Принято в работу» или «Выполнено» невозможна.')
+        return redirect('admin_panel')
+
+    if request.method == 'POST':
+        form = StatusToInProgressForm(request.POST)
+        if form.is_valid():
+            application.status = Application.STATUS_IN_PROGRESS
+            application.comment = form.cleaned_data['comment']
+            application.save()
+            messages.success(request, f'Заявка #{application.pk} переведена в статус «Принято в работу».')
+        else:
+            messages.error(request, 'Для перевода заявки в работу обязательно укажите комментарий.')
+    return redirect('admin_panel')
+```
+
+##### Логика работы «на пальцах» (без заморочек):
+По ТЗ заявку можно взять в работу **только из статуса «Новая»**, и при этом администратор **обязан написать текстовый комментарий** (например, указать имя назначенного дизайнера или уточняющие детали):
+1. Находим заявку по номеру `pk`.
+2. **Проверка Конечного Автомата (State Machine):** Смотрим текущий статус. Если заявка уже находится в статусе «Принято в работу» или «Выполнено», система выдает ошибку и блокирует смену. Повторно перевести нельзя!
+3. Из формы модального окна считываем отправленный текст комментария (`form = StatusToInProgressForm(request.POST)`).
+4. Проверяем валидность: комментарий не должен быть пустым!
+5. Если комментарий введен:
+   - Статус заявки меняется на `in_progress` («Принято в работу»).
+   - В поле `comment` записывается текст администратора.
+   - Заявка сохраняется в БД (`application.save()`).
+   - Клиент в своем личном кабинете сразу увидит этот комментарий и новый статус!
+6. Администратор перенаправляется обратно в панель управления с зеленым сообщением об успехе.
+
+##### Построчный разбор каждой команды:
+- `application = get_object_or_404(Application, pk=pk)`:
+  - Извлекает заявку по её ID либо возвращает 404, если такой записи нет.
+- `if application.status != Application.STATUS_NEW:`:
+  - Жесткий запрет перехода: статус разрешено менять ТОЛЬКО у новых заявок.
+- `form = StatusToInProgressForm(request.POST)`:
+  - Связывает форму с отправленным комментарием.
+- `application.comment = form.cleaned_data['comment']`:
+  - Сохраняет очищенную строку комментария в объект заявки.
+- `application.status = Application.STATUS_IN_PROGRESS`:
+  - Фиксирует новое состояние заявки в соответствии с ТЗ.
+- `application.save()`:
+  - Записывает изменения в SQLite (`UPDATE catalog_application SET status = ..., comment = ... WHERE id = ...;`).
+- `return redirect('admin_panel')`:
+  - Возвращает администратора на страницу панели управления.
+
+---
+
+#### 3.4. Функция `admin_change_status_completed(request, pk)` — Завершение заявки и сдача дизайна
+
+```python
+@user_passes_test(is_admin, login_url='login')
+def admin_change_status_completed(request, pk):
+    """
+    Смена статуса заявки с «Новая» на «Выполнено» с обязательным прикреплением изображения дизайна.
+    """
+    application = get_object_or_404(Application, pk=pk)
+
+    if application.status != Application.STATUS_NEW:
+        messages.error(request, 'Смена статуса с «Принято в работу» или «Выполнено» невозможна.')
+        return redirect('admin_panel')
+
+    if request.method == 'POST':
+        form = StatusToCompletedForm(request.POST, request.FILES)
+        if form.is_valid():
+            application.status = Application.STATUS_COMPLETED
+            application.design_image = form.cleaned_data['design_image']
+            application.save()
+            messages.success(request, f'Заявка #{application.pk} успешно выполнена и прикреплен дизайн!')
+        else:
+            messages.error(request, 'Для завершения заявки обязательно загрузите изображение дизайна (jpg, jpeg, png, bmp до 5 Мб).')
+    return redirect('admin_panel')
+```
+
+##### Логика работы «на пальцах» (без заморочек):
+По ТЗ заявку можно завершить **только из статуса «Новая»**, и при этом администратор **обязан прикрепить файл готового дизайн-проекта** (изображение до 5 Мб):
+1. Находим заявку по номеру `pk`.
+2. Проверяем, что заявка действительно находится в статусе «Новая». Если нет — блокируем смену.
+3. Форма считывает прикрепленный файл через `request.FILES`.
+4. Серверный валидатор проверяет файл:
+   - Файл действительно прикреплен.
+   - Размер файла не превышает 5 Мб (5 * 1024 * 1024 байт).
+   - Расширение строго из списка: `.jpg`, `.jpeg`, `.png`, `.bmp`.
+5. При успешной проверке:
+   - Статус меняется на `completed` («Выполнено»).
+   - Файл дизайна сохраняется в специальную папку `media/designs/`.
+   - В поле `design_image` базы данных записывается путь к файлу.
+   - Заявка сохраняется в БД.
+   - **Главный эффект:** эта завершенная заявка моментально появляется на Главной странице сайта в блоке «4 последние выполненные работы»!
+6. Администратор перенаправляется в панель с уведомлением об успешном выполнении.
+
+##### Построчный разбор каждой команды:
+- `form = StatusToCompletedForm(request.POST, request.FILES)`:
+  - Инициализация формы с файловым потоком. Если упустить `request.FILES`, картинка не будет получена.
+- `if form.is_valid():`:
+  - Запускает валидатор `validate_design_file` из `models.py`.
+- `application.status = Application.STATUS_COMPLETED`:
+  - Устанавливает финальный статус выполнения заявки.
+- `application.design_image = form.cleaned_data['design_image']`:
+  - Присваивает проверенный графический файл полю `ImageField(upload_to='designs/')`.
+- `application.save()`:
+  - Django физически сохраняет файл в каталог `media/designs/` и обновляет запись в таблице `catalog_application`.
+
+---
+
+#### 3.5. Функция `admin_add_category(request)` — Создание новой категории
+
+```python
+@user_passes_test(is_admin, login_url='login')
+def admin_add_category(request):
+    """
+    Добавление новой категории заявок администратором.
+    """
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Категория «{category.name}» успешно добавлена.')
+        else:
+            for field, errs in form.errors.items():
+                for e in errs:
+                    messages.error(request, f'Ошибка категории: {e}')
+    return redirect('admin_panel')
+```
+
+##### Логика работы «на пальцах» (без заморочек):
+В панели управления есть блок «Создать категорию»:
+1. Администратор пишет название (например, *«Скандинавский стиль»*) и жмет «Добавить».
+2. Отправляется POST-запрос.
+3. Форма `CategoryForm` проверяет:
+   - Поле не пустое.
+   - Такой категории еще нет в базе (причем проверка регистронезависимая: если есть *«Кухня»*, добавить *«кухня»* или *«КУХНЯ»* не разрешат).
+4. Если название уникальное — категория сохраняется в таблицу `catalog_category`.
+5. Показывается зеленая плашка: *«Категория "Скандинавский стиль" успешно добавлена»*.
+6. Если была ошибка (например, дубликат) — форма собирает ошибки и выводит их красным цветом.
+7. Администратор возвращается в панель управления. Новая категория сразу появляется в выпадающих списках клиентов при создании заявок!
+
+##### Построчный разбор каждой команды:
+- `form = CategoryForm(request.POST)`:
+  - Загружает введенное название в форму категории.
+- `if form.is_valid():`:
+  - Вызывает метод `clean_name()`, где выполняется проверка `Category.objects.filter(name__iexact=name).exists()`.
+- `category = form.save()`:
+  - Записывает новую категорию в базу данных SQLite.
+- `for field, errs in form.errors.items():`:
+  - Цикл распаковывает ошибки валидации и отправляет их в `messages.error` для вывода в интерфейсе.
+- `return redirect('admin_panel')`:
+  - Возврат в панель управления.
+
+---
+
+#### 3.6. Функция `admin_delete_category(request, pk)` — Каскадное удаление категории
+
+```python
+@user_passes_test(is_admin, login_url='login')
+def admin_delete_category(request, pk):
+    """
+    Удаление категории заявок:
+    При удалении категории каскадно удаляются все заявки данной категории.
+    """
+    category = get_object_or_404(Category, pk=pk)
+
+    if request.method == 'POST':
+        name = category.name
+        apps_count = category.applications.count()
+        category.delete()  # Каскадное удаление заявок через on_delete=models.CASCADE
+        messages.success(
+            request,
+            f'Категория «{name}» и все привязанные заявки ({apps_count} шт.) были безвозвратно удалены.'
+        )
+        return redirect('admin_panel')
+
+    return render(request, 'catalog/category_confirm_delete.html', {'category': category})
+```
+
+##### Логика работы «на пальцах» (без заморочек):
+Удаление категории — опаснейшая операция, потому что к ней привязаны заявки клиентов:
+1. **Каскадное удаление (`CASCADE`):** По ТЗ, если удалить категорию (например, *«Спальня»*), база данных обязана автоматически удалить все заявки, которые были созданы в этой категории. Это обеспечивает строгость целостности данных (не может быть заявки с «пустой» несуществующей категорией).
+2. **Двухэтапное подтверждение:**
+   - **Этап 1 (`GET`):** Администратор кликает кнопку «Удалить категорию». Система открывает отдельное окно подтверждения `category_confirm_delete.html`: *«Внимание! При удалении категории "Спальня" будут безвозвратно удалены 3 привязанные к ней заявки! Вы уверены?»*.
+   - **Этап 2 (`POST`):** Администратор нажимает «Да, удалить категорию».
+     - Считаем, сколько заявок сейчас привязано (`apps_count = category.applications.count()`).
+     - Вызываем `category.delete()`. СУБД SQLite благодаря правилу `on_delete=models.CASCADE` в модели `Application` автоматически стирает саму категорию и все сопряженные строки из таблицы заявок.
+     - Выводим подробное уведомление: *«Категория "Спальня" и все привязанные заявки (3 шт.) были безвозвратно удалены»*.
+     - Редирект в панель управления.
+
+##### Построчный разбор каждой команды:
+- `category = get_object_or_404(Category, pk=pk)`:
+  - Находит категорию по идентификатору `pk`.
+- `apps_count = category.applications.count()`:
+  - Обращается к обратному связующему менеджеру `applications` (благодаря параметру `related_name='applications'` во внешнем ключе модели `Application`) и вычисляет количество зависимых записей.
+- `category.delete()`:
+  - Выполняет каскадное удаление на уровне СУБД SQLite.
+- `messages.success(...)`:
+  - Формирует информационное подтверждение с точным числом удаленных дочерних объектов.
+- `return render(request, 'catalog/category_confirm_delete.html', {'category': category})`:
+  - Отображает предупреждающий диалог при переходе по ссылке (метод `GET`).
+
+---
 
 ### 4. Регистрация в стандартной панели Django (`catalog/admin.py`)
 Файл: [catalog/admin.py](file:///C:/Users/fer/PycharmProjects/YP_DJANGO_3/design_studio/catalog/admin.py)
