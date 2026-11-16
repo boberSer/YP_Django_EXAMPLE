@@ -51,18 +51,18 @@
                 <tbody>
                     {% for app in applications %}
                         <tr>
-                            <!-- Временная метка по ТЗ -->
+                            <!-- Временная метка -->
                             <td class="col-date-text">
                                 {{ app.created_at|date:"d.m.Y H:i" }}
                             </td>
 
-                            <!-- Название и описание по ТЗ -->
+                            <!-- Название и описание -->
                             <td>
                                 <div class="app-title">{{ app.title }}</div>
                                 <div class="app-desc">{{ app.description }}</div>
                             </td>
 
-                            <!-- Категория заявки по ТЗ -->
+                            <!-- Категория заявки -->
                             <td>
                                 <span class="badge badge-category">{{ app.category.name }}</span>
                             </td>
@@ -78,7 +78,7 @@
                                 {% endif %}
                             </td>
 
-                            <!-- Статус заявки по ТЗ -->
+                            <!-- Статус заявки -->
                             <td>
                                 {% if app.status == 'new' %}
                                     <span class="badge badge-new">Новая</span>
@@ -129,7 +129,7 @@
                                             <button type="button" class="btn btn-sm" onclick="this.closest('dialog').close()">Отмена</button>
                                             <form method="post" action="{% url 'application-delete' app.pk %}" class="inline-form">
                                                 {% csrf_token %}
-                                                <button type="submit" class="btn btn-danger btn-sm">Да, удалить</button>
+                                                <button type="submit" class=" btn btn-danger btn-sm">Да, удалить</button>
                                             </form>
                                         </div>
                                     </dialog>

@@ -23,7 +23,7 @@
         </div>
     </div>
 
-    <!-- Счетчик по ТЗ: Количество заявок в статусе "Принято в работу" -->
+    <!-- Счетчик: Количество заявок в статусе "Принято в работу" -->
     <div class="counter-box">
         <div class="counter-label">Заявок в работе сейчас</div>
         <div class="counter-number" id="in-progress-counter">{{ in_progress_count }}</div>
@@ -39,7 +39,7 @@
         <div class="cards-grid">
             {% for app in completed_apps %}
                 <div class="project-card">
-                    <!-- Фотография дизайна или плана по ТЗ -->
+                    <!-- Изображение проекта -->
                     {% if app.design_image %}
                         <img src="{{ app.design_image.url }}" alt="{{ app.title }}">
                     {% elif app.photo %}

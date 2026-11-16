@@ -28,9 +28,7 @@ def index(request):
     - Не более 4 последних заявок в статусе «Выполнено»
     """
     in_progress_count = Application.objects.filter(status=Application.STATUS_IN_PROGRESS).count()
-    completed_apps = Application.objects.filter(
-        status=Application.STATUS_COMPLETED
-    ).select_related('category').order_by('-created_at')[:4]
+    completed_apps = Application.objects.filter(status=Application.STATUS_COMPLETED).select_related('category').order_by('-created_at')[:4]
 
     context = {
         'in_progress_count': in_progress_count,
@@ -62,12 +60,6 @@ def register_view(request):
 
 
 def login_view(request):
-    """
-    Авторизация пользователя и администратора.
-    Перенаправление:
-    - Пользователь -> Личный кабинет (cabinet)
-    - Администратор -> Панель администратора (admin_panel)
-    """
     if request.user.is_authenticated:
         if request.user.is_staff or request.user.is_superuser:
             return redirect('admin_panel')
@@ -91,7 +83,7 @@ def login_view(request):
     else:
         form = UserLoginForm()
 
-    return render(request, 'registration/login.html', {'form': form})
+    return render(request, 'register/login.html', {'form': form})
 
 
 def logout_view(request):
@@ -105,12 +97,6 @@ def logout_view(request):
 
 @login_required
 def cabinet_view(request):
-    """
-    Личный кабинет авторизованного пользователя:
-    - Просмотр своих заявок (временная метка, название, описание, категория, статус)
-    - Сортировка по умолчанию: от новых к старым (-created_at)
-    - Фильтрация по статусу (Все, Новая, Принято в работу, Выполнено)
-    """
     user_apps = Application.objects.filter(user=request.user).select_related('category')
 
     # Подсчет количества заявок по статусам для бейджей фильтрации
@@ -164,12 +150,6 @@ def create_application_view(request):
 
 @login_required
 def delete_application_view(request, pk):
-    """
-    Удаление заявки:
-    - Пользователь может удалить ТОЛЬКО свою заявку
-    - Удаление возможно ТОЛЬКО если статус «Новая»
-    - Обязательное подтверждение действия
-    """
     application = get_object_or_404(Application, pk=pk, user=request.user)
 
     if not application.is_deletable:
@@ -190,13 +170,6 @@ def delete_application_view(request, pk):
 
 @user_passes_test(is_admin, login_url='login')
 def admin_panel_view(request):
-    """
-    Личный кабинет администратора (панель управления):
-    - Просмотр всех заявок с фильтрацией
-    - Смена статуса заявок «Новая» -> «Принято в работу» (с комментарием)
-    - Смена статуса заявок «Новая» -> «Выполнено» (с фото дизайна)
-    - Управление категориями (добавление, удаление с каскадным удалением заявок)
-    """
     status_filter = request.GET.get('status', 'all')
     all_apps = Application.objects.select_related('user', 'category').all()
 
