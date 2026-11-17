@@ -850,7 +850,7 @@ Django использует двухуровневое наследование 
    ```python
    form = UserRegistrationForm(request.POST)
    if not form.is_valid():
-       return render(request, 'registration/register.html', {'form': form})
+       return render(request, 'register/register.html', {'form': form})
    ```
 2. **В шаблоне (`register.html`):**  
    Шаблон проверяет наличие ошибок у конкретного поля через `{% if form.fio.errors %}`:
@@ -1699,7 +1699,7 @@ def login_view(request):
     else:
         form = UserLoginForm()
 
-    return render(request, 'registration/login.html', {'form': form})
+    return render(request, 'register/login.html', {'form': form})
 
 
 def logout_view(request):

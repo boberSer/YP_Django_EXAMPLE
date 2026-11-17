@@ -83,7 +83,7 @@ def login_view(request):
     else:
         form = UserLoginForm()
 
-    return render(request, 'register/login.html', {'form': form})
+    return render(request, 'registration/login.html', {'form': form})
 
 
 def logout_view(request):
@@ -201,9 +201,6 @@ def admin_panel_view(request):
 
 @user_passes_test(is_admin, login_url='login')
 def admin_change_status_in_progress(request, pk):
-    """
-    Смена статуса заявки с «Новая» на «Принято в работу» с обязательным комментарием.
-    """
     application = get_object_or_404(Application, pk=pk)
 
     if application.status != Application.STATUS_NEW:
@@ -224,9 +221,6 @@ def admin_change_status_in_progress(request, pk):
 
 @user_passes_test(is_admin, login_url='login')
 def admin_change_status_completed(request, pk):
-    """
-    Смена статуса заявки с «Новая» на «Выполнено» с обязательным прикреплением изображения дизайна.
-    """
     application = get_object_or_404(Application, pk=pk)
 
     if application.status != Application.STATUS_NEW:
@@ -247,9 +241,6 @@ def admin_change_status_completed(request, pk):
 
 @user_passes_test(is_admin, login_url='login')
 def admin_add_category(request):
-    """
-    Добавление новой категории заявок администратором.
-    """
     if request.method == 'POST':
         form = CategoryForm(request.POST)
         if form.is_valid():
@@ -264,10 +255,6 @@ def admin_add_category(request):
 
 @user_passes_test(is_admin, login_url='login')
 def admin_delete_category(request, pk):
-    """
-    Удаление категории заявок:
-    При удалении категории каскадно удаляются все заявки данной категории.
-    """
     category = get_object_or_404(Category, pk=pk)
 
     if request.method == 'POST':

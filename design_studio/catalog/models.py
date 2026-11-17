@@ -24,11 +24,6 @@ def validate_photo_file(file):
 
 
 def validate_design_file(file):
-    """
-    Валидация изображения дизайна:
-    - Разрешенные форматы: jpg, jpeg, png, bmp
-    - Максимальный размер: 5 Мб
-    """
     max_size_mb = 5
     if file.size > max_size_mb * 1024 * 1024:
         raise ValidationError(f'Максимальный размер файла не должен превышать {max_size_mb} Мб.')

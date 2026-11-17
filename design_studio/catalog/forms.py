@@ -231,9 +231,6 @@ class StatusToCompletedForm(forms.Form):
 
 
 class CategoryForm(forms.ModelForm):
-    """
-    Форма добавления новой категории.
-    """
     class Meta:
         model = Category
         fields = ['name']
